@@ -1,10 +1,11 @@
-from sklearn.model_selection import GridSearchCV
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
+import copy
 import pandas as pd
 
-# Defina sua classe de rede neural aqui
+
 class RecommendationNN(nn.Module):
     def __init__(self, num_users, num_items, embedding_size, hidden_size):
         super(RecommendationNN, self).__init__()
@@ -23,7 +24,7 @@ class RecommendationNN(nn.Module):
         x = 4 * x + 1
         return x.view(-1)
 
-# Defina a função para carregar os dados aqui
+
 def carregar_avaliacoes_do_arquivo_xls(caminho_do_arquivo):
     df = pd.read_excel(caminho_do_arquivo) # Carregar os dados do arquivo Excel para um DataFrame do pandas
     df_com_zero = df.fillna(0) # Substituir valores NaN por zero
@@ -31,35 +32,72 @@ def carregar_avaliacoes_do_arquivo_xls(caminho_do_arquivo):
     tensor_dados = torch.tensor(df_dados.values, dtype=torch.float32) # Converter o DataFrame para um tensor PyTorch
     return tensor_dados, df_dados.reset_index(drop=True)
 
-# Carregue os dados
+
+def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=50, learning_rate=0.1):
+    optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
+    num_usuarios, num_itens = avaliacoes.shape
+    usuarios_ids, itens_ids = torch.meshgrid(torch.arange(num_usuarios), torch.arange(num_itens), indexing='ij')
+    usuarios_ids, itens_ids = usuarios_ids.flatten(), itens_ids.flatten()
+    for epoch in range(epochs):
+        optimizer.zero_grad()
+        predictions = modelo(usuarios_ids.long(), itens_ids.long()).view(num_usuarios, num_itens)
+        loss = criterion(predictions, avaliacoes.float())
+        loss.backward()
+        optimizer.step()
+
+
+
+import itertools
+
 caminho_do_arquivo = 'X_MovieLens-1M.xlsx'
 avaliacoes_inicial_tensor, avaliacoes_inicial_df = carregar_avaliacoes_do_arquivo_xls(caminho_do_arquivo)
+num_usuarios, num_itens = avaliacoes_inicial_tensor.shape
+usuarios_ids, itens_ids = torch.meshgrid(torch.arange(num_usuarios), torch.arange(num_itens), indexing='ij')
+usuarios_ids = usuarios_ids.reshape(-1)
+itens_ids = itens_ids.reshape(-1)
+usuarios_ids_long = usuarios_ids.long()
+itens_ids_long = itens_ids.long()
 
-# Crie o modelo
-num_users = 300
-num_items = 1000
+# Exemplo de uso
+# num_usuarios = len(usuarios_ids_long)
+# num_itens = len(itens_ids_long)
 embedding_size = 64
 hidden_size = 128
-modelo = RecommendationNN(num_users, num_items, embedding_size, hidden_size)
 
-# Defina os hiperparâmetros para pesquisa
-param_grid = {
-    'lr': [0.001, 0.01, 0.1],
-    'weight_decay': [0.001, 0.01, 0.1],
-    'embedding_size': [32, 64, 128],
-    'hidden_size': [64, 128, 256]
-}
 
-# Defina a função de perda e o otimizador
-criterion = nn.MSELoss()
+# Defina os valores para a pesquisa em grade
+learning_rates = [0.01, 0.1, 0.5, 1.0]
+epochs_list = [50, 100, 150, 200, 250, 300]
+# melhores: learning_rate 0.1 e epoch 300
+# Adicione mais hiperparâmetros conforme necessário
 
-# Defina o número de épocas
-num_epochs = 10
+best_loss = float('inf')
+best_hyperparams = {}
 
-# Execute a pesquisa de hiperparâmetros
-grid_search = GridSearchCV(estimator=modelo, param_grid=param_grid, cv=3, scoring='neg_mean_squared_error')
-grid_search.fit(avaliacoes_inicial_tensor, avaliacoes_inicial_tensor)  # Substitua os dados de treinamento aqui
+# Realize a pesquisa em grade
+for learning_rate, epochs in itertools.product(learning_rates, epochs_list):
+    print(f"learning_rate : {learning_rate}, epochs : {epochs}")
+    modelo_global_federado1 = RecommendationNN(num_usuarios, num_itens, embedding_size, hidden_size)
+    optimizer = optim.SGD(modelo_global_federado1.parameters(), lr=learning_rate)
+    criterion = nn.MSELoss()
 
-# Imprima os melhores parâmetros encontrados
-print("Melhores parâmetros encontrados:")
-print(grid_search.best_params_)
+    for epoch in range(epochs):
+        treinar_modelo_global(modelo_global_federado1, avaliacoes_inicial_tensor, criterion, 1, learning_rate)
+
+    with torch.no_grad():
+        predictions_val = modelo_global_federado1(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        loss_val = criterion(predictions_val, avaliacoes_inicial_tensor.float())
+
+    # Se encontrou um modelo melhor, atualize os melhores parâmetros
+    if loss_val < best_loss:
+        best_loss = loss_val
+        best_hyperparams = {'learning_rate': learning_rate, 'epochs': epochs}  # Adicione mais hiperparâmetros conforme necessário
+
+# Imprima os melhores hiperparâmetros encontrados
+print("Melhores hiperparâmetros:", best_hyperparams)
+
+
+
+
+
+
