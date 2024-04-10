@@ -6,23 +6,32 @@ import copy
 import pandas as pd
 from AlgorithmUserFairness import RMSE, Polarization, IndividualLossVariance, GroupLossVariance
 
-class RecommendationNN(nn.Module):
+class RecommendationCNN(nn.Module):
     def __init__(self, num_users, num_items, embedding_size, hidden_size):
-        super(RecommendationNN, self).__init__()
+        super(RecommendationCNN, self).__init__()
         self.user_embedding = nn.Embedding(num_users, embedding_size)
         self.item_embedding = nn.Embedding(num_items, embedding_size)
-        self.fc1 = nn.Linear(2 * embedding_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, 1)
-        
+        self.conv1 = nn.Conv2d(in_channels=128, out_channels=16, kernel_size=(1, 1), stride=1)  # Ajuste do kernel_size na camada convolucional
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.fc1 = nn.Linear(16 * 1 * embedding_size, 128)  # Ajuste na dimensão de entrada para fc1
+        self.fc2 = nn.Linear(128, 64)
+        self.fc3 = nn.Linear(64, 1)
+
     def forward(self, user, item):
         user_embedded = self.user_embedding(user)
         item_embedded = self.item_embedding(item)
-        x = torch.cat((user_embedded, item_embedded), dim=1)
+        x = torch.cat((user_embedded, item_embedded), dim=1).unsqueeze(-1).unsqueeze(-1)
+        x = self.conv1(x)
+        x = self.pool(x)
+        x = x.view(x.size(0), -1)
         x = torch.relu(self.fc1(x))
-        x = torch.sigmoid(self.fc2(x))  # Usando sigmoid para garantir valores entre 0 e 1
-        # Transformando os valores para o intervalo desejado (1 a 5)
+        x = torch.relu(self.fc2(x))
+        x = torch.sigmoid(self.fc3(x))
         x = 4 * x + 1
         return x.view(-1)
+
+
+
     
 def carregar_avaliacoes_do_arquivo_xls(caminho_do_arquivo):
     df = pd.read_excel(caminho_do_arquivo) # Carregar os dados do arquivo Excel para um DataFrame do pandas
@@ -294,7 +303,7 @@ def main():
     embedding_size = 64
     hidden_size = 128
 
-    modelo_global_federado1 = RecommendationNN(num_usuarios, num_itens, embedding_size, hidden_size)
+    modelo_global_federado1 = RecommendationCNN(num_usuarios, num_itens, embedding_size, hidden_size)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(modelo_global_federado1.parameters(), lr=0.001, weight_decay=0.001)  # Adam como otimizador com regularização L2
 
