@@ -487,8 +487,8 @@ def main():
     print(f'\nRMSE Inicial              : {result_inicial:.9f}')
     print(f'RMSE Final [1]            : {result_final1:.9f}')
     print(f'RMSE Final [2]            : {result_final2:.9f}')
-    print(f'RMSE Final [3]            : {result_final2:.9f}')
-    print(f'RMSE Final [4]            : {result_final2:.9f}')
+    print(f'RMSE Final [3]            : {result_final3:.9f}')
+    print(f'RMSE Final [4]            : {result_final4:.9f}')
     print(f'RMSE Final [Não Federado] : {result_final_nao_federado:.9f}')
 
     avaliacoes_inicial_df.to_excel("avaliacoes_inicial.xlsx", index=False)

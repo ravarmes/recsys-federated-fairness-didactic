@@ -66,8 +66,10 @@ hidden_size = 128
 
 
 # Defina os valores para a pesquisa em grade
-learning_rates = [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.010, 0.015, 0.020, 0.025, 0.030, 0.035]
-epochs_list = [200, 250, 300, 350, 400]
+# learning_rates = [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.010, 0.015, 0.020, 0.025, 0.030, 0.035]
+# epochs_list = [200, 250, 300, 350, 400]
+learning_rates = [0.001, 0.002, 0.003, 0.008, 0.010, 0.015, 0.020]
+epochs_list = [350, 400]
 # Melhores hiperparâmetros: {'learning_rate': 0.005, 'epochs': 300}
 # Adicione mais hiperparâmetros conforme necessário
 

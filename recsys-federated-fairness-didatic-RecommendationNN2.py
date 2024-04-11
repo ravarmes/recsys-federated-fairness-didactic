@@ -35,8 +35,10 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     dados = np.loadtxt(caminho_do_arquivo, delimiter=',', dtype=np.float32)
     return torch.tensor(dados), dados
     
-def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=2, learning_rate=0.1):
-    optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
+def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=10, learning_rate=0.01):
+    # optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(modelo.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
+
     num_usuarios, num_itens = avaliacoes.shape
     usuarios_ids, itens_ids = torch.meshgrid(torch.arange(num_usuarios), torch.arange(num_itens), indexing='ij')
     usuarios_ids, itens_ids = usuarios_ids.flatten(), itens_ids.flatten()
@@ -47,8 +49,7 @@ def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=2, learning_rate
         loss.backward()
         optimizer.step()
 
-
-def treinar_modelos_locais(modelo_global, usuarios_ids, itens_ids, avaliacoes_inicial, criterion, epochs=50, learning_rate=0.01):
+def treinar_modelos_locais(modelo_global, usuarios_ids, itens_ids, avaliacoes_inicial, criterion, epochs=10, learning_rate=0.01):
     # Inicialização de dados e listas
     avaliacoes_final = avaliacoes_inicial.clone()
     modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes_inicial.size(0))] # criando uma cópia de modelo global inicial para cada usuário
@@ -73,7 +74,8 @@ def treinar_modelos_locais(modelo_global, usuarios_ids, itens_ids, avaliacoes_in
         avaliacoes_final_cliente = avaliacoes_inicial.clone()
         avaliacoes_final_cliente[i, indices_novas_avaliacoes] = novas_avaliacoes
 
-        optimizer_cliente = optim.SGD(modelo_cliente.parameters(), lr=learning_rate)
+        # optimizer_cliente = optim.SGD(modelo_cliente.parameters(), lr=learning_rate)
+        optimizer_cliente = optim.Adam(modelo_cliente.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
         for epoch in range(epochs):
             optimizer_cliente.zero_grad()
             predictions = modelo_cliente(usuarios_ids, itens_ids).view(num_usuarios, num_itens).float()
@@ -98,7 +100,6 @@ def treinar_modelos_locais(modelo_global, usuarios_ids, itens_ids, avaliacoes_in
         modelos_clientes_loss.append((i, loss_cliente.item())) # perdas dos modelos locais
 
     return avaliacoes_final, modelos_clientes, modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr
-
 
 def agregar_modelos_locais_ao_global_media_aritmetica_pesos(modelo_global, modelos_clientes):
     """
@@ -296,9 +297,8 @@ def main():
 
     modelo_global_federado1 = RecommendationNN(num_usuarios, num_itens, embedding_size, hidden_size)
     criterion = nn.MSELoss()
-    optimizer = optim.Adam(modelo_global_federado1.parameters(), lr=0.001, weight_decay=0.001)  # Adam como otimizador com regularização L2
 
-    treinar_modelo_global(modelo_global_federado1, avaliacoes_inicial_tensor, criterion, 10, 0.1)
+    treinar_modelo_global(modelo_global_federado1, avaliacoes_inicial_tensor, criterion)
     modelo_global_nao_federado = copy.deepcopy(modelo_global_federado1)
     modelo_global_federado2 = copy.deepcopy(modelo_global_federado1)
     modelo_global_federado3 = copy.deepcopy(modelo_global_federado1)
@@ -309,7 +309,7 @@ def main():
 
     print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")
     # avaliacoes_final_tensor, modelos_clientes, modelos_clientes_perdas = treinar_modelos_locais(modelo_global_federado1, avaliacoes_inicial_tensor, criterion, 1000)
-    avaliacoes_final_tensor, modelos_clientes, modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr = treinar_modelos_locais(modelo_global_federado1, usuarios_ids, itens_ids, avaliacoes_inicial_tensor, criterion, 10, 0.1)
+    avaliacoes_final_tensor, modelos_clientes, modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr = treinar_modelos_locais(modelo_global_federado1, usuarios_ids, itens_ids, avaliacoes_inicial_tensor, criterion)
     # avaliacoes_final_tensor, modelos_clientes, modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr = treinar_modelos_locais(modelo_global_federado1, avaliacoes_inicial_tensor, criterion, 50, 0.1)
 
 
@@ -327,7 +327,7 @@ def main():
     agregar_modelos_locais_ao_global_media_poderada_pesos_loss(modelo_global_federado3, modelos_clientes, modelos_clientes_loss)
     agregar_modelos_locais_ao_global_media_poderada_pesos_nr(modelo_global_federado4, modelos_clientes, modelos_clientes_nr)
 
-    treinar_modelo_global(modelo_global_nao_federado, avaliacoes_final_tensor, criterion, 50, 0.1) # Simulando um modelo não federado
+    treinar_modelo_global(modelo_global_nao_federado, avaliacoes_final_tensor, criterion) # Simulando um modelo não federado
 
     with torch.no_grad():
         recomendacoes_final_tensor1 = modelo_global_federado1(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
