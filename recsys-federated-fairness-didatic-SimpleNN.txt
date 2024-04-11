@@ -1,0 +1,100 @@
+Épocas 2
+Group Loss Variance (Rgrp Inicial)                            : 1.680680037
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética     ]) : 1.420452118
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv]) : 1.420452118
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss ]) : 0.068971127
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR   ]) : 0.035017807
+Group Loss Variance (Rgrp Final [Não Federado :: Rindv     ]) : 1.097865939
+Group Loss Variance (Rgrp Final [Não Federado :: Rindv     ]) : 1.097865939
+Group Loss Variance (Rgrp Final [Não Federado :: Loss      ]) : 0.024539841
+Group Loss Variance (Rgrp Final [Não Federado :: NR        ]) : 0.042787142
+
+
+Épocas 10
+Group Loss Variance (Rgrp Inicial)                            : 1.371784925
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética     ]) : 1.284390211
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv]) : 1.284389973
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss ]) : 0.061385401
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR   ]) : 0.000456460
+Group Loss Variance (Rgrp Final [Não Federado :: Rindv     ]) : 1.075236559
+Group Loss Variance (Rgrp Final [Não Federado :: Rindv     ]) : 1.075236559
+Group Loss Variance (Rgrp Final [Não Federado :: Loss      ]) : 0.000041723
+Group Loss Variance (Rgrp Final [Não Federado :: NR        ]) : 0.041423861
+
+RMSE Inicial              : 2.025072575
+RMSE Final [1]            : 2.011982203
+RMSE Final [2]            : 2.011982203
+RMSE Final [3]            : 2.011982203
+RMSE Final [4]            : 2.011982203
+RMSE Final [Não Federado] : 1.985947132
+
+------------------------------------------------------------------------------------
+epochs=1500, learning_rate=0.031
+=== MEDIDA DE JUSTIÇA ===
+
+Polarization Inicial (Rpol)                : 0.111715741
+Polarization Final   (Rpol [1])            : 0.227454424
+Polarization Final   (Rpol [2])            : 0.227459356
+Polarization Final   (Rpol [3])            : 0.227454469
+Polarization Final   (Rpol [4])            : 0.227456942
+Polarization Final   (Rpol [Não Federado]) : 0.219693989
+
+Individual Loss Variance (Rindv Inicial)                            : 1.069341660
+Individual Loss Variance (Rindv Final [1 :: Média Aritmética     ]) : 0.976629615
+Individual Loss Variance (Rindv Final [2 :: Média Ponderada Rindv]) : 0.976573288
+Individual Loss Variance (Rindv Final [3 :: Média Ponderada Loss ]) : 0.976629436
+Individual Loss Variance (Rindv Final [4 :: Média Ponderada NR   ]) : 0.976598918
+Individual Loss Variance (Rindv Final [Não Federado              ]) : 0.947592854
+
+Group Loss Variance (Rgrp Inicial)                            : 0.731687784
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética     ]) : 0.836699843
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv]) : 0.836684108
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss ]) : 0.655661464
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR   ]) : 0.655563533
+Group Loss Variance (Rgrp Final [Não Federado :: Rindv     ]) : 0.812633276
+Group Loss Variance (Rgrp Final [Não Federado :: Rindv     ]) : 0.812633276
+Group Loss Variance (Rgrp Final [Não Federado :: Loss      ]) : 0.640143454
+Group Loss Variance (Rgrp Final [Não Federado :: NR        ]) : 0.640142679
+
+RMSE Inicial              : 1.820534706
+RMSE Final [1]            : 1.779850960
+RMSE Final [2]            : 1.779841661
+RMSE Final [3]            : 1.779841661
+RMSE Final [4]            : 1.779841661
+RMSE Final [Não Federado] : 1.775299072
+
+
+------------------------------------------------------------------------------------
+epochs=2000, learning_rate=0.035
+=== MEDIDA DE JUSTIÇA ===
+
+Polarization Inicial (Rpol)                : 0.087224498
+Polarization Final   (Rpol [1])            : 0.162340462
+Polarization Final   (Rpol [2])            : 0.162351891
+Polarization Final   (Rpol [3])            : 0.162340462
+Polarization Final   (Rpol [4])            : 0.162352473
+Polarization Final   (Rpol [Não Federado]) : 0.150825530
+
+Individual Loss Variance (Rindv Inicial)                            : 1.085232615
+Individual Loss Variance (Rindv Final [1 :: Média Aritmética     ]) : 1.058143258
+Individual Loss Variance (Rindv Final [2 :: Média Ponderada Rindv]) : 1.058086514
+Individual Loss Variance (Rindv Final [3 :: Média Ponderada Loss ]) : 1.058143258
+Individual Loss Variance (Rindv Final [4 :: Média Ponderada NR   ]) : 1.058112621
+Individual Loss Variance (Rindv Final [Não Federado              ]) : 1.026791334
+
+Group Loss Variance (Rgrp Inicial)                            : 0.750565648
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética     ]) : 0.918448091
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv]) : 0.918422520
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss ]) : 0.613779306
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR   ]) : 0.727043271
+Group Loss Variance (Rgrp Final [Não Federado :: Rindv     ]) : 0.875791192
+Group Loss Variance (Rgrp Final [Não Federado :: Rindv     ]) : 0.875791192
+Group Loss Variance (Rgrp Final [Não Federado :: Loss      ]) : 0.591465950
+Group Loss Variance (Rgrp Final [Não Federado :: NR        ]) : 0.691602707
+
+RMSE Inicial              : 1.827283978
+RMSE Final [1]            : 1.806916237
+RMSE Final [2]            : 1.806908011
+RMSE Final [3]            : 1.806908011
+RMSE Final [4]            : 1.806908011
+RMSE Final [Não Federado] : 1.802237034
