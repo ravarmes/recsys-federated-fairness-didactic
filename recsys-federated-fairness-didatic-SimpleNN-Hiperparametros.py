@@ -304,9 +304,10 @@ numero_de_itens = avaliacoes_inicial_tensor.shape[1]
 
 # Defina os valores para a pesquisa em grade
 learning_rates = [0.001, 0.005, 0.010, 0.015, 0.020, 0.030, 0.031, 0.032, 0.033, 0.034, 0.035, 0.036, 0.037, 0.038, 0.039, 0.040]
-epochs_list = [100, 300, 500, 700, 1000, 1200, 1500, 1600, 1700, 1800, 1900, 2000]
+epochs_list = [100, 300, 500, 700, 1000, 1200, 1500, 1600, 1700, 1800]
 # Melhores hiperparâmetros: {'learning_rate': 0.031, 'epochs': 1500}
 # Melhores hiperparâmetros: {'learning_rate': 0.035, 'epochs': 2000}
+# Melhores hiperparâmetros: {'learning_rate': 0.034, 'epochs': 1200}
 # Adicione mais hiperparâmetros conforme necessário
 
 best_loss = float('inf')
