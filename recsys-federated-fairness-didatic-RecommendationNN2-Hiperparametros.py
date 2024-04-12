@@ -71,6 +71,7 @@ hidden_size = 128
 learning_rates = [0.001, 0.002, 0.003, 0.008, 0.010, 0.015, 0.020]
 epochs_list = [350, 400]
 # Melhores hiperparâmetros: {'learning_rate': 0.005, 'epochs': 300}
+# Melhores hiperparâmetros: {'learning_rate': 0.02, 'epochs': 400}
 # Adicione mais hiperparâmetros conforme necessário
 
 best_loss = float('inf')
