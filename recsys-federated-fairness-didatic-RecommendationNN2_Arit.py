@@ -35,7 +35,7 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     dados = np.loadtxt(caminho_do_arquivo, delimiter=',', dtype=np.float32)
     return torch.tensor(dados), dados
     
-def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=2, learning_rate=0.01):
+def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=400, learning_rate=0.001):
     # optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
     optimizer = optim.Adam(modelo.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
 
@@ -49,7 +49,7 @@ def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=2, learning_rate
         loss.backward()
         optimizer.step()
 
-def treinar_modelos_locais(modelo_global, usuarios_ids, itens_ids, avaliacoes_inicial, criterion, epochs=2, learning_rate=0.01):
+def treinar_modelos_locais(modelo_global, usuarios_ids, itens_ids, avaliacoes_inicial, criterion, epochs=400, learning_rate=0.001):
     # Inicialização de dados e listas
     avaliacoes_final = avaliacoes_inicial.clone()
     modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes_inicial.size(0))] # criando uma cópia de modelo global inicial para cada usuário
