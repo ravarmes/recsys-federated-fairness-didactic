@@ -29,9 +29,10 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     dados = np.loadtxt(caminho_do_arquivo, delimiter=',', dtype=np.float32)
     return torch.tensor(dados), dados
     
-def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=1200, learning_rate=0.034):
+def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=100, learning_rate=0.034):
     # optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
     optimizer = optim.Adam(modelo.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
+    modelo.train()
     for epoch in range(epochs):
         optimizer.zero_grad()
         output = modelo(avaliacoes)
@@ -39,7 +40,7 @@ def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=1200, learning_r
         loss.backward()
         optimizer.step()
 
-def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=1200, learning_rate=0.034):
+def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=100, learning_rate=0.034):
     avaliacoes_final = avaliacoes_inicial.clone()
     modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes_inicial.size(0))]
     modelos_clientes_rindv = [] # injustiças individuais de cada cliente local em seu respectivo modelo local
@@ -76,7 +77,8 @@ def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=
         # modelo_cliente_local = copy.deepcopy(modelo_cliente)  # Clonando o modelo_cliente para um novo objeto
         # optimizer_cliente = optim.SGD(modelo_cliente.parameters(), lr=learning_rate)
         optimizer_cliente = optim.Adam(modelo_cliente.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
-        
+        modelo_cliente.train()
+
         for _ in range(epochs):
             optimizer_cliente.zero_grad()
             output_cliente = modelo_cliente(avaliacoes_final_cliente)
@@ -239,7 +241,7 @@ def main():
         recomendacoes_inicial_tensor4 = modelo_global_federado4(avaliacoes_inicial_tensor)
 
     
-    for round in range(20):
+    for round in range(50):
         print(f"\n=== ROUND {round} ===")
 
         print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")
@@ -362,13 +364,13 @@ def main():
     G_NR = {1: advantaged_group_nr, 2: disadvantaged_group_nr}
 
     print("G_RINDV")
-    print(G_RINDV)
+    print(G_RINDV[1])
 
     print("G_LOSS")
-    print(G_LOSS)
+    print(G_LOSS[1])
 
     print("G_NR")
-    print(G_NR)
+    print(G_NR[1])
 
     glv_inicial = GroupLossVariance(avaliacoes_inicial_df, omega_inicial, G_RINDV, 1) #axis = 1 (0 rows e 1 columns)
     glv_final1_rindv = GroupLossVariance(avaliacoes_final_df, omega_final, G_RINDV, 1) #axis = 1 (0 rows e 1 columns)
