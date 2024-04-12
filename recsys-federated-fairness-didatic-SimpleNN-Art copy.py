@@ -18,6 +18,17 @@ class SimpleNN(nn.Module):
         x = self.activation(self.layer2(x)) * 4 + 1  # Scale sigmoid output to range [1, 5]
         return x
 
+def calcular_diferencas_modelos(modelo_a, modelo_b):
+    l1_diferenca, l2_diferenca = 0.0, 0.0
+    for param_a, param_b in zip(modelo_a.parameters(), modelo_b.parameters()):
+        # Calculando a diferença L1 (norma Manhattan / distância absoluta)
+        l1_diferenca += torch.norm((param_a - param_b).abs(), p=1).item()
+
+        # Calculando a diferença L2 (norma euclidiana)
+        l2_diferenca += torch.norm(param_a - param_b, p=2).item()
+
+    return l1_diferenca, l2_diferenca
+
 def carregar_avaliacoes_do_arquivo_xls(caminho_do_arquivo):
     df = pd.read_excel(caminho_do_arquivo) # Carregar os dados do arquivo Excel para um DataFrame do pandas
     df_com_zero = df.fillna(0) # Substituir valores NaN por zero
@@ -30,7 +41,25 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     return torch.tensor(dados), dados
     
 def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=1, learning_rate=0.034):
+    """
+    Treina o modelo global usando uma matriz de avaliações.
+    
+    Args:
+        modelo (torch.nn.Module): O modelo de rede neural a ser treinado.
+        avaliacoes (torch.Tensor): Um tensor contendo as avaliações dos usuários sobre os itens.
+        criterion (torch.nn.modules.loss._Loss): A função de perda utilizada para o treinamento.
+        epochs (int, optional): Número de épocas para o treinamento. Padrão é 50.
+        learning_rate (float, optional): Taxa de aprendizado para o otimizador SGD. Padrão é 0.01.
+        
+    Descrição:
+        Esta função treina o modelo global utilizando a matriz de avaliações fornecida.
+        Utiliza o otimizador SGD (Descida do Gradiente Estocástica) com a taxa de aprendizado
+        especificada. A função de perda calculada a cada época é baseada na diferença entre
+        as saídas do modelo e as avaliações reais. Os parâmetros do modelo são atualizados
+        em cada passo do treinamento para minimizar a função de perda.
+    """
     optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
+
     for epoch in range(epochs):
         optimizer.zero_grad()
         output = modelo(avaliacoes)
@@ -47,6 +76,15 @@ def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=
 
     NR_ADVANTAGED_GROUP = 120      # número de avaliações geradas para os clientes do grupo dos favorecidos
     NR_DISADVANTAGED_GROUP = 10  # número de avaliações geradas para os clientes do grupo dos desfavorecidos
+
+    print(f"\nAntes do treinamento param local cliente 0 parameters[0]\n")
+    print(list(modelos_clientes[0].parameters())[0])
+
+    print(f"\nAntes do treinamento param local cliente 1 parameters[0]\n")
+    print(list(modelos_clientes[1].parameters())[0])
+
+    print(f"\nAntes do treinamento param local cliente 200 parameters[0]\n")
+    print(list(modelos_clientes[200].parameters())[0])
 
     for i, modelo_cliente in enumerate(modelos_clientes):
         # Gerar índices de itens não avaliados
@@ -70,6 +108,18 @@ def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=
         avaliacoes_final_cliente = avaliacoes_inicial.clone()  # Usar clone para manter as avaliações iniciais
         avaliacoes_final_cliente[i][indices_novas_avaliacoes] = novas_avaliacoes
 
+        if i == 0:
+            print("\navaliacoes_final_cliente 0\n")
+            print(avaliacoes_final_cliente)
+
+        if i == 1:
+            print("\navaliacoes_final_cliente 1\n")
+            print(avaliacoes_final_cliente)
+
+        if i == 200:
+            print("\navaliacoes_final_cliente 200\n")
+            print(avaliacoes_final_cliente)
+
         print(f"=== Treinamento no Cliente {i + 1} ===")
 
         # modelo_cliente_local = copy.deepcopy(modelo_cliente)  # Clonando o modelo_cliente para um novo objeto
@@ -83,9 +133,33 @@ def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=
             loss_cliente.backward()
             optimizer_cliente.step()
 
+        if i == 0:
+            print(f"\nDepois do treinamento param local cliente {i} parameters[0]\n")
+            print(list(modelos_clientes[i].parameters())[0])
+
+        if i == 1:
+            print(f"\nDepois do treinamento param local cliente {i} parameters[0]\n")
+            print(list(modelos_clientes[i].parameters())[0])
+
+        if i == 200:
+            print(f"\nDepois do treinamento param local cliente {i} parameters[0]\n")
+            print(list(modelos_clientes[i].parameters())[0])
+
         with torch.no_grad():
             recomendacoes_cliente = modelo_cliente(avaliacoes_final_cliente)
 
+        if i == 0:
+            print("\nrecomendacoes_cliente 0\n")
+            print(recomendacoes_cliente)
+
+        if i == 1:
+            print("\nrecomendacoes_cliente 1\n")
+            print(recomendacoes_cliente)
+
+        if i == 200:
+            print("\nrecomendacoes_cliente 200\n")
+            print(recomendacoes_cliente)
+        
         # Calculando as perdas individuais (lis) dos clientes em cada modelo de cliente
         avaliacoes_final_cliente_np = avaliacoes_final_cliente.numpy()
         avaliacoes_final_cliente_df = pd.DataFrame(avaliacoes_final_cliente_np)
@@ -99,10 +173,35 @@ def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=
         modelos_clientes_rindv.append((i, lis_cliente[i])) # injustiças individuais do cliente local em seu respectivo modelo local
         modelos_clientes_loss.append((i, loss_cliente.item())) # perdas dos modelos locais
 
+    print("\n\nverificando os modelos de clientes 1 e 2\n")
+    print(modelos_clientes[0] is modelos_clientes[1])
+
     # Retorna ambos: avaliações finais, avaliações finais por cliente, modelos dos clientes e perdas dos modelos (baseado na injustiça individual li)
     return avaliacoes_final, modelos_clientes, modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr
 
 def agregar_modelos_locais_ao_global_media_aritmetica_pesos(modelo_global, modelos_clientes):
+    """
+    Atualiza os parâmetros do modelo global com a média dos parâmetros dos modelos locais.
+
+    Args:
+        modelo_global (torch.nn.Module): O modelo global de rede neural.
+        modelos_clientes (List[torch.nn.Module]): Lista dos modelos locais treinados.
+
+    Descrição:
+        Esta função percorre cada parâmetro (por exemplo, pesos e vieses) do modelo global e
+        atualiza seus valores com a média dos valores dos parâmetros correspondentes dos
+        modelos locais. Essa abordagem assume que uma média simples dos parâmetros pode
+        levar a um modelo global mais genérico e robusto, incorporando o aprendizado obtido
+        de várias fontes de dados locais.
+
+        O processo de agregação é uma etapa fundamental no aprendizado federado, permitindo
+        que o modelo global beneficie-se do aprendizado distribuído sem a necessidade de
+        compartilhar diretamente os dados locais, preservando assim a privacidade dos dados.
+
+        É importante que esta função seja chamada após o treinamento dos modelos locais e
+        antes da próxima rodada de distribuição do modelo global atualizado para treinamento
+        local adicional ou para inferência.
+    """
     with torch.no_grad():
         for i, param_global in enumerate(modelo_global.parameters()):
             cliente_params = torch.stack([list(cliente.parameters())[i].data for cliente in modelos_clientes])
@@ -192,6 +291,15 @@ def agregar_modelos_locais_ao_global_media_aritmetica_gradientes(modelo_global, 
             param_global -= learning_rate * gradientes_medios[i]
 
 def agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(modelo_global, modelos_clientes, modelos_clientes_rindv):
+    # print(f"\n\nTAMANHO")
+    # total_params = sum(p.numel() for p in modelo_global.parameters())
+    # print(f"Total de parâmetros no modelo: {len(enumerate(modelo_global.parameters()))}")
+    print("\n\nagregar_modelos_locais_ao_global_media_poderada_pesos_rindv\n")
+    # # imprimindo os parâmetros de um modelo
+    # print("\nIMPRIMINDO PARÂMETROS DO MODELO GLOBAL ANTES DA AGREGAÇÃO")
+    # for parametro in modelo_global.parameters():
+    #     print(parametro)
+
     # Calcular o total de perdas
     total_perdas = sum(perda for _, perda in modelos_clientes_rindv)
     # print("total_perdas")
@@ -199,15 +307,33 @@ def agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(modelo_global, m
 
     # Calcular os pesos de agregação baseados nas perdas
     pesos = [perda / total_perdas for _, perda in modelos_clientes_rindv]
+    # print("\n\nagregar_modelos_locais_ao_global_media_poderada_pesos_rindv")
+    # print("modelos_clientes_rindv")
+    # print(pesos)
 
     # Atualizar os parâmetros do modelo global com a média ponderada
     with torch.no_grad():
         for i, param_global in enumerate(modelo_global.parameters()):
+            if i == 0 or i == 3:
+                print(f"\nparam_global {i}\n")
+                print(param_global)
             param_medio = torch.zeros_like(param_global)
             for j, peso in enumerate(pesos):
+                if ((i == 0 or i == 3) and (j == 0 or j == 299)):
+                    print(f"\nparam local cliente {j} param {i}\n")
+                    print(list(modelos_clientes[j].parameters())[i])
                 cliente_params = list(modelos_clientes[j].parameters())[i].data
                 param_medio += peso * cliente_params
             param_global.copy_(param_medio)
+
+    # # imprimindo os parâmetros de um modelo
+    # print("\nIMPRIMINDO PARÂMETROS DO MODELO GLOBAL DEPOIS DA AGREGAÇÃO")
+    # for parametro in modelo_global.parameters():
+    #     print(parametro)
+
+    # print("\nIMPRIMINDO PARÂMETROS DO MODELO LOCAL 1")
+    # for parametro in modelos_clientes[0].parameters():
+    #     print(parametro)
 
 def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(modelo_global, modelos_clientes, modelos_clientes_loss):
     # Calcular o total de perdas
@@ -278,16 +404,24 @@ def main():
     print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")
     avaliacoes_final_tensor, modelos_clientes, modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr = treinar_modelos_locais(modelo_global_federado1, avaliacoes_inicial_tensor, criterion)
 
-    # print("\nmodelos_clientes_rindv")
-    # print(modelos_clientes_rindv)
-    # print("\nmodelos_clientes_loss")
-    # print(modelos_clientes_loss)
-    # print("\nmodelos_clientes_nr")
-    # print(modelos_clientes_nr)
+    print("\nmodelos_clientes_rindv")
+    print(modelos_clientes_rindv)
+    print("\nmodelos_clientes_loss")
+    print(modelos_clientes_loss)
+    print("\nmodelos_clientes_nr")
+    print(modelos_clientes_nr)
+
+    l1_dif, l2_dif = calcular_diferencas_modelos(modelos_clientes[0], modelos_clientes[1])
+    print(f"Diferença L1 total entre os modelos: {l1_dif}")
+    print(f"Diferença L2 total entre os modelos: {l2_dif}")
+
+    l1_dif, l2_dif = calcular_diferencas_modelos(modelos_clientes[0], modelos_clientes[200])
+    print(f"Diferença L1 total entre os modelos: {l1_dif}")
+    print(f"Diferença L2 total entre os modelos: {l2_dif}")
 
     print("\n=== SERVIDOR (ETAPA DE TREINAMENTO FINAL - AGREGAÇÃO) ===")
-    # agregar_modelos_locais_ao_global_media_aritmetica_pesos(modelo_global_federado1, modelos_clientes)
-    agregar_modelos_locais_ao_global_media_aritmetica_gradientes(modelo_global_federado1, modelos_clientes)
+    agregar_modelos_locais_ao_global_media_aritmetica_pesos(modelo_global_federado1, modelos_clientes)
+    # agregar_modelos_locais_ao_global_media_aritmetica_gradientes(modelo_global_federado1, modelos_clientes)
     agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(modelo_global_federado2, modelos_clientes, modelos_clientes_rindv)
     agregar_modelos_locais_ao_global_media_poderada_pesos_loss(modelo_global_federado3, modelos_clientes, modelos_clientes_loss)
     agregar_modelos_locais_ao_global_media_poderada_pesos_nr(modelo_global_federado4, modelos_clientes, modelos_clientes_nr)

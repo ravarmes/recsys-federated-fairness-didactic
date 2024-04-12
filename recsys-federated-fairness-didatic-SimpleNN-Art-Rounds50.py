@@ -29,8 +29,9 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     dados = np.loadtxt(caminho_do_arquivo, delimiter=',', dtype=np.float32)
     return torch.tensor(dados), dados
     
-def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=1, learning_rate=0.034):
-    optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
+def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=1200, learning_rate=0.034):
+    # optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(modelo.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
     for epoch in range(epochs):
         optimizer.zero_grad()
         output = modelo(avaliacoes)
@@ -38,15 +39,15 @@ def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=1, learning_rate
         loss.backward()
         optimizer.step()
 
-def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=1, learning_rate=0.034):
+def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=1200, learning_rate=0.034):
     avaliacoes_final = avaliacoes_inicial.clone()
     modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes_inicial.size(0))]
     modelos_clientes_rindv = [] # injustiças individuais de cada cliente local em seu respectivo modelo local
     modelos_clientes_loss = [] # perdas dos modelos locais de cada cliente local
     modelos_clientes_nr = [] # número de avaliações de cada cliente local
 
-    NR_ADVANTAGED_GROUP = 120      # número de avaliações geradas para os clientes do grupo dos favorecidos
-    NR_DISADVANTAGED_GROUP = 10  # número de avaliações geradas para os clientes do grupo dos desfavorecidos
+    NR_ADVANTAGED_GROUP = 10      # número de avaliações geradas para os clientes do grupo dos favorecidos
+    NR_DISADVANTAGED_GROUP = 1  # número de avaliações geradas para os clientes do grupo dos desfavorecidos
 
     for i, modelo_cliente in enumerate(modelos_clientes):
         # Gerar índices de itens não avaliados
@@ -70,11 +71,11 @@ def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=
         avaliacoes_final_cliente = avaliacoes_inicial.clone()  # Usar clone para manter as avaliações iniciais
         avaliacoes_final_cliente[i][indices_novas_avaliacoes] = novas_avaliacoes
 
-        print(f"=== Treinamento no Cliente {i + 1} ===")
+        # print(f"=== Treinamento no Cliente {i + 1} ===")
 
         # modelo_cliente_local = copy.deepcopy(modelo_cliente)  # Clonando o modelo_cliente para um novo objeto
-        # optimizer_cliente = optim.SGD(modelo_cliente_local.parameters(), lr=learning_rate)
-        optimizer_cliente = optim.SGD(modelo_cliente.parameters(), lr=learning_rate)
+        # optimizer_cliente = optim.SGD(modelo_cliente.parameters(), lr=learning_rate)
+        optimizer_cliente = optim.Adam(modelo_cliente.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
         
         for _ in range(epochs):
             optimizer_cliente.zero_grad()
@@ -109,28 +110,6 @@ def agregar_modelos_locais_ao_global_media_aritmetica_pesos(modelo_global, model
             param_global.copy_(cliente_params.mean(dim=0))
 
 def agregar_modelos_locais_ao_global_media_aritmetica_gradientes(modelo_global, modelos_clientes, learning_rate=0.034):
-    """
-    Atualiza os parâmetros do modelo global com a média dos gradientes dos modelos locais.
-
-    Args:
-        modelo_global (torch.nn.Module): O modelo global de rede neural.
-        modelos_clientes (List[torch.nn.Module]): Lista dos modelos locais treinados.
-
-    Descrição:
-        Esta função percorre cada parâmetro (por exemplo, pesos e vieses) do modelo global e
-        atualiza seus valores com a média dos gradientes dos parâmetros correspondentes dos
-        modelos locais. A ideia é que, em vez de atualizar o modelo global com a média direta
-        dos parâmetros dos modelos locais, utilizamos os gradientes (derivadas da função de
-        perda em relação aos parâmetros) para fazer uma atualização baseada em como cada
-        modelo local "aprendeu" a partir de seus dados.
-
-        Este método é uma abordagem alternativa ao processo padrão de agregação em
-        aprendizado federado, permitindo um ajuste mais fino do modelo global com base nas
-        tendências de aprendizado locais.
-
-        É importante ressaltar que, para que esta função funcione como esperado, os modelos
-        locais devem ter seus gradientes retidos (não zerados) após o treinamento.
-    """
     with torch.no_grad():
         global_params = list(modelo_global.parameters())
         
@@ -148,25 +127,6 @@ def agregar_modelos_locais_ao_global_media_aritmetica_gradientes(modelo_global, 
             param_global -= learning_rate * gradientes_medios[i]
 
 
-    """
-    Atualiza os parâmetros do modelo global com a média ponderada dos gradientes dos modelos locais.
-
-    Args:
-        modelo_global (torch.nn.Module): O modelo global de rede neural.
-        modelos_clientes (List[torch.nn.Module]): Lista dos modelos locais treinados.
-        learning_rate (float): Taxa de aprendizado para a atualização dos parâmetros do modelo global.
-
-    Descrição:
-        Esta função percorre cada parâmetro do modelo global e atualiza seus valores com a média ponderada dos gradientes
-        dos parâmetros correspondentes dos modelos locais. A ponderação é determinada pela regra de justiça, onde os
-        primeiros 15 modelos contribuem com 5% da agregação, enquanto os modelos restantes contribuem com 95%.
-
-        Este método é uma abordagem alternativa ao processo padrão de agregação em aprendizado federado, permitindo um
-        ajuste mais fino do modelo global com base nas tendências de aprendizado locais e considerando justiça na agregação.
-
-        É importante ressaltar que, para que esta função funcione como esperado, os modelos locais devem ter seus gradientes
-        retidos (não zerados) após o treinamento.
-    """
     num_clientes = len(modelos_clientes)
     peso_clientes = [0.05] * min(num_clientes, 15)  # Primeiros 15 modelos contribuem com 5%
     peso_restante = 0.95  # Peso para os modelos restantes
@@ -273,41 +233,64 @@ def main():
     modelo_global_federado4 = copy.deepcopy(modelo_global_federado1)
 
     with torch.no_grad():
-        recomendacoes_inicial_tensor = modelo_global_federado1(avaliacoes_inicial_tensor)
+        recomendacoes_inicial_tensor1 = modelo_global_federado1(avaliacoes_inicial_tensor)
+        recomendacoes_inicial_tensor2 = modelo_global_federado2(avaliacoes_inicial_tensor)
+        recomendacoes_inicial_tensor3 = modelo_global_federado3(avaliacoes_inicial_tensor)
+        recomendacoes_inicial_tensor4 = modelo_global_federado4(avaliacoes_inicial_tensor)
 
-    print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")
-    avaliacoes_final_tensor, modelos_clientes, modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr = treinar_modelos_locais(modelo_global_federado1, avaliacoes_inicial_tensor, criterion)
+    
+    for round in range(20):
+        print(f"\n=== ROUND {round} ===")
 
-    # print("\nmodelos_clientes_rindv")
-    # print(modelos_clientes_rindv)
-    # print("\nmodelos_clientes_loss")
-    # print(modelos_clientes_loss)
-    # print("\nmodelos_clientes_nr")
-    # print(modelos_clientes_nr)
+        print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")
+        print("treinar_modelos_locais :: modelo_global_federado1")
+        avaliacoes_final_tensor1, modelos_clientes1, modelos_clientes_rindv1, modelos_clientes_loss1, modelos_clientes_nr1 = treinar_modelos_locais(modelo_global_federado1, avaliacoes_inicial_tensor, criterion)
+        print("treinar_modelos_locais :: modelo_global_federado2")
+        avaliacoes_final_tensor2, modelos_clientes2, modelos_clientes_rindv2, modelos_clientes_loss2, modelos_clientes_nr2 = treinar_modelos_locais(modelo_global_federado2, avaliacoes_inicial_tensor, criterion)
+        print("treinar_modelos_locais :: modelo_global_federado3")
+        avaliacoes_final_tensor3, modelos_clientes3, modelos_clientes_rindv3, modelos_clientes_loss3, modelos_clientes_nr3 = treinar_modelos_locais(modelo_global_federado3, avaliacoes_inicial_tensor, criterion)
+        print("treinar_modelos_locais :: modelo_global_federado4")
+        avaliacoes_final_tensor4, modelos_clientes4, modelos_clientes_rindv4, modelos_clientes_loss4, modelos_clientes_nr4 = treinar_modelos_locais(modelo_global_federado4, avaliacoes_inicial_tensor, criterion)
 
-    print("\n=== SERVIDOR (ETAPA DE TREINAMENTO FINAL - AGREGAÇÃO) ===")
-    # agregar_modelos_locais_ao_global_media_aritmetica_pesos(modelo_global_federado1, modelos_clientes)
-    agregar_modelos_locais_ao_global_media_aritmetica_gradientes(modelo_global_federado1, modelos_clientes)
-    agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(modelo_global_federado2, modelos_clientes, modelos_clientes_rindv)
-    agregar_modelos_locais_ao_global_media_poderada_pesos_loss(modelo_global_federado3, modelos_clientes, modelos_clientes_loss)
-    agregar_modelos_locais_ao_global_media_poderada_pesos_nr(modelo_global_federado4, modelos_clientes, modelos_clientes_nr)
 
-    treinar_modelo_global(modelo_global_nao_federado, avaliacoes_final_tensor, criterion) # Simulando um modelo não federado
+        # print("\nmodelos_clientes_rindv")
+        # print(modelos_clientes_rindv)
+        # print("\nmodelos_clientes_loss")
+        # print(modelos_clientes_loss)
+        # print("\nmodelos_clientes_nr")
+        # print(modelos_clientes_nr)
+
+        print("\n=== SERVIDOR (ETAPA DE TREINAMENTO FINAL - AGREGAÇÃO) ===")
+        print("agregar_modelos_locais_ao_global_media_aritmetica_pesos :: modelo_global_federado1")
+        agregar_modelos_locais_ao_global_media_aritmetica_pesos(modelo_global_federado1, modelos_clientes1)
+        # agregar_modelos_locais_ao_global_media_aritmetica_gradientes(modelo_global_federado1, modelos_clientes)
+        print("agregar_modelos_locais_ao_global_media_poderada_pesos_rindv :: modelo_global_federado2")
+        agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(modelo_global_federado2, modelos_clientes2, modelos_clientes_rindv2)
+        print("agregar_modelos_locais_ao_global_media_poderada_pesos_loss :: modelo_global_federado3")
+        agregar_modelos_locais_ao_global_media_poderada_pesos_loss(modelo_global_federado3, modelos_clientes3, modelos_clientes_loss3)
+        print("agregar_modelos_locais_ao_global_media_poderada_pesos_nr :: modelo_global_federado4")
+        agregar_modelos_locais_ao_global_media_poderada_pesos_nr(modelo_global_federado4, modelos_clientes4, modelos_clientes_nr4)
+
+        # treinar_modelo_global(modelo_global_federado1, avaliacoes_final_tensor1, criterion) 
+        # treinar_modelo_global(modelo_global_federado2, avaliacoes_final_tensor2, criterion) 
+        # treinar_modelo_global(modelo_global_federado3, avaliacoes_final_tensor3, criterion) 
+        # treinar_modelo_global(modelo_global_federado4, avaliacoes_final_tensor4, criterion) 
+        treinar_modelo_global(modelo_global_nao_federado, avaliacoes_final_tensor1, criterion) 
 
     with torch.no_grad():
-        recomendacoes_final_tensor1 = modelo_global_federado1(avaliacoes_final_tensor)
-        recomendacoes_final_tensor2 = modelo_global_federado2(avaliacoes_final_tensor)
-        recomendacoes_final_tensor3 = modelo_global_federado3(avaliacoes_final_tensor)
-        recomendacoes_final_tensor4 = modelo_global_federado4(avaliacoes_final_tensor)
-        recomendacoes_modelo_global_nao_federado_tensor = modelo_global_nao_federado(avaliacoes_final_tensor)
+        recomendacoes_final_tensor1 = modelo_global_federado1(avaliacoes_final_tensor1)
+        recomendacoes_final_tensor2 = modelo_global_federado2(avaliacoes_final_tensor2)
+        recomendacoes_final_tensor3 = modelo_global_federado3(avaliacoes_final_tensor3)
+        recomendacoes_final_tensor4 = modelo_global_federado4(avaliacoes_final_tensor4)
+        recomendacoes_modelo_global_nao_federado_tensor = modelo_global_nao_federado(avaliacoes_final_tensor1)
 
     
     print("\n=== MEDIDA DE JUSTIÇA ===")
     avaliacoes_inicial_np = avaliacoes_inicial_tensor.numpy()
     avaliacoes_inicial_df = pd.DataFrame(avaliacoes_inicial_np)
-    avaliacoes_final_np = avaliacoes_final_tensor.numpy()
+    avaliacoes_final_np = avaliacoes_final_tensor1.numpy()
     avaliacoes_final_df = pd.DataFrame(avaliacoes_final_np)
-    recomendacoes_inicial_np = recomendacoes_inicial_tensor.numpy()
+    recomendacoes_inicial_np = recomendacoes_inicial_tensor1.numpy()
     recomendacoes_inicial_df = pd.DataFrame(recomendacoes_inicial_np)
     recomendacoes_final_np1 = recomendacoes_final_tensor1.numpy()
     recomendacoes_final_df1 = pd.DataFrame(recomendacoes_final_np1)
@@ -360,19 +343,19 @@ def main():
     # # G group: identifying the groups (NR: users grouped by number of ratings for available items)
     # # advantaged group: 5% users with the highest number of item ratings
     # # disadvantaged group: 95% users with the lowest number of item ratings
-    modelos_clientes_rindv_ordenados = sorted(modelos_clientes_rindv, key=lambda x: x[1], reverse=False)
+    modelos_clientes_rindv_ordenados = sorted(modelos_clientes_rindv1, key=lambda x: x[1], reverse=False)
     list_users_rindv = [i for i, _ in modelos_clientes_rindv_ordenados]
     advantaged_group_rindv = list_users_rindv[0:15]
     disadvantaged_group_rindv = list_users_rindv[15:300]
     G_RINDV = {1: advantaged_group_rindv, 2: disadvantaged_group_rindv}
 
-    modelos_clientes_loss_ordenados = sorted(modelos_clientes_loss, key=lambda x: x[1], reverse=False)
+    modelos_clientes_loss_ordenados = sorted(modelos_clientes_loss1, key=lambda x: x[1], reverse=False)
     list_users_loss = [i for i, _ in modelos_clientes_loss_ordenados]
     advantaged_group_loss = list_users_loss[0:15]
     disadvantaged_group_loss = list_users_loss[15:300]
     G_LOSS = {1: advantaged_group_loss, 2: disadvantaged_group_loss}
     
-    modelos_clientes_nr_ordenados = sorted(modelos_clientes_nr, key=lambda x: x[1], reverse=True)
+    modelos_clientes_nr_ordenados = sorted(modelos_clientes_nr1, key=lambda x: x[1], reverse=True)
     list_users_nr = [i for i, _ in modelos_clientes_nr_ordenados]
     advantaged_group_nr = list_users_nr[0:15]
     disadvantaged_group_nr = list_users_nr[15:300]
