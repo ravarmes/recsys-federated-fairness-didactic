@@ -71,6 +71,7 @@ learning_rates = [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009,
 epochs_list = [200, 250, 300, 350, 400]
 # Melhores hiperparâmetros: {'learning_rate': 0.005, 'epochs': 300}
 # Melhores hiperparâmetros: {'learning_rate': 0.02, 'epochs': 400}
+# Melhores hiperparâmetros: {'learning_rate': 0.001, 'epochs': 400}
 # Adicione mais hiperparâmetros conforme necessário
 
 best_loss = float('inf')
