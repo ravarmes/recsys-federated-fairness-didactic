@@ -34,7 +34,8 @@ def carregar_avaliacoes_do_arquivo_xls(caminho_do_arquivo):
 
 
 def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=50, learning_rate=0.1):
-    optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
+    # optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(modelo.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
     num_usuarios, num_itens = avaliacoes.shape
     usuarios_ids, itens_ids = torch.meshgrid(torch.arange(num_usuarios), torch.arange(num_itens), indexing='ij')
     usuarios_ids, itens_ids = usuarios_ids.flatten(), itens_ids.flatten()

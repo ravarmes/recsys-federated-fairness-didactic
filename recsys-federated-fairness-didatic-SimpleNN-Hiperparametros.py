@@ -30,24 +30,8 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     return torch.tensor(dados), dados
     
 def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=200, learning_rate=0.01):
-    """
-    Treina o modelo global usando uma matriz de avaliações.
-    
-    Args:
-        modelo (torch.nn.Module): O modelo de rede neural a ser treinado.
-        avaliacoes (torch.Tensor): Um tensor contendo as avaliações dos usuários sobre os itens.
-        criterion (torch.nn.modules.loss._Loss): A função de perda utilizada para o treinamento.
-        epochs (int, optional): Número de épocas para o treinamento. Padrão é 50.
-        learning_rate (float, optional): Taxa de aprendizado para o otimizador SGD. Padrão é 0.01.
-        
-    Descrição:
-        Esta função treina o modelo global utilizando a matriz de avaliações fornecida.
-        Utiliza o otimizador SGD (Descida do Gradiente Estocástica) com a taxa de aprendizado
-        especificada. A função de perda calculada a cada época é baseada na diferença entre
-        as saídas do modelo e as avaliações reais. Os parâmetros do modelo são atualizados
-        em cada passo do treinamento para minimizar a função de perda.
-    """
-    optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
+    # optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(modelo.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
 
     for epoch in range(epochs):
         optimizer.zero_grad()
