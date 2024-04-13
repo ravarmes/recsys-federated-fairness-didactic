@@ -1,0 +1,49 @@
+ROUNDS: 1 | Melhores hiperparâmetros: {'learning_rate': 0.034, 'epochs': 1}
+Group Loss Variance (Rgrp Inicial)                              : 0.164975315
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética Rindv ]) : 0.162942216
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv  ]) : 0.162387550
+Group Loss Variance (Rgrp Final [Não Federado :: Rindv       ]) : 0.162948430
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética Loss  ]) : 0.001973693
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss   ]) : 0.001927389
+Group Loss Variance (Rgrp Final [Não Federado :: Loss        ]) : 0.001970993
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética NR    ]) : 0.001973693
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR     ]) : 0.001947754
+Group Loss Variance (Rgrp Final [Não Federado :: NR          ]) : 0.001970982
+
+------------------------
+ROUNDS: 20 | Melhores hiperparâmetros: {'learning_rate': 0.034, 'epochs': 1}
+Group Loss Variance (Rgrp Inicial)                              : 0.171532899
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética Rindv ]) : 0.174573362
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv  ]) : 0.176665425
+Group Loss Variance (Rgrp Final [Não Federado :: Rindv       ]) : 0.172901630
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética Loss  ]) : 0.001138463
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss   ]) : 0.001347928
+Group Loss Variance (Rgrp Final [Não Federado :: Loss        ]) : 0.001090896
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética NR    ]) : 0.001138451
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR     ]) : 0.001119465
+Group Loss Variance (Rgrp Final [Não Federado :: NR          ]) : 0.001090881
+
+------------------------
+ROUNDS: 20 | Melhores hiperparâmetros: {'learning_rate': 0.034, 'epochs': 30}
+
+0.167242274
+
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv  ]) : 0.204736277
+Group Loss Variance (Rgrp Final [Não Federado :: Rindv       ]) : 0.231160134
+
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss   ]) : 0.024824286
+Group Loss Variance (Rgrp Final [Não Federado :: Loss        ]) : 0.028302815
+
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR     ]) : 0.168544009
+Group Loss Variance (Rgrp Final [Não Federado :: NR          ]) : 0.179804087
+
+
+------------------------
+ROUNDS: 20 | Melhores hiperparâmetros: {'learning_rate': 0.034, 'epochs': 100}
+
+
