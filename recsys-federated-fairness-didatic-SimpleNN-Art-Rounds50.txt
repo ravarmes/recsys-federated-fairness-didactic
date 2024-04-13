@@ -44,6 +44,6 @@ Group Loss Variance (Rgrp Final [Não Federado :: NR          ]) : 0.179804087
 
 
 ------------------------
-ROUNDS: 20 | Melhores hiperparâmetros: {'learning_rate': 0.034, 'epochs': 100}
+ROUNDS: 50 | Melhores hiperparâmetros: {'learning_rate': 0.034, 'epochs': 100}
 
 
