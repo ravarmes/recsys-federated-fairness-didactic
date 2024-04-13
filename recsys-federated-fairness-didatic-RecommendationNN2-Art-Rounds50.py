@@ -286,11 +286,12 @@ def main():
         treinar_modelo_global(modelo_global_nao_federado, avaliacoes_final_tensor1, criterion) 
 
     with torch.no_grad():
-        recomendacoes_final_tensor1 = modelo_global_federado1(avaliacoes_final_tensor1)
-        recomendacoes_final_tensor2 = modelo_global_federado2(avaliacoes_final_tensor2)
-        recomendacoes_final_tensor3 = modelo_global_federado3(avaliacoes_final_tensor3)
-        recomendacoes_final_tensor4 = modelo_global_federado4(avaliacoes_final_tensor4)
-        recomendacoes_modelo_global_nao_federado_tensor = modelo_global_nao_federado(avaliacoes_final_tensor1)
+        recomendacoes_final_tensor1 = modelo_global_federado1(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        recomendacoes_final_tensor2 = modelo_global_federado2(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        recomendacoes_final_tensor3 = modelo_global_federado3(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        recomendacoes_final_tensor4 = modelo_global_federado4(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        recomendacoes_modelo_global_nao_federado_tensor = modelo_global_nao_federado(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+
 
     
     print("\n=== MEDIDA DE JUSTIÇA ===")
