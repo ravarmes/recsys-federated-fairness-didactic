@@ -351,13 +351,13 @@ def main():
     disadvantaged_group_rindv = list_users_rindv[15:300]
     G_RINDV = {1: advantaged_group_rindv, 2: disadvantaged_group_rindv}
 
-    modelos_clientes_loss_ordenados = sorted(modelos_clientes_loss1, key=lambda x: x[1], reverse=False)
+    modelos_clientes_loss_ordenados = sorted(modelos_clientes_loss3, key=lambda x: x[1], reverse=False)
     list_users_loss = [i for i, _ in modelos_clientes_loss_ordenados]
     advantaged_group_loss = list_users_loss[0:15]
     disadvantaged_group_loss = list_users_loss[15:300]
     G_LOSS = {1: advantaged_group_loss, 2: disadvantaged_group_loss}
     
-    modelos_clientes_nr_ordenados = sorted(modelos_clientes_nr1, key=lambda x: x[1], reverse=True)
+    modelos_clientes_nr_ordenados = sorted(modelos_clientes_nr4, key=lambda x: x[1], reverse=True)
     list_users_nr = [i for i, _ in modelos_clientes_nr_ordenados]
     advantaged_group_nr = list_users_nr[0:15]
     disadvantaged_group_nr = list_users_nr[15:300]
