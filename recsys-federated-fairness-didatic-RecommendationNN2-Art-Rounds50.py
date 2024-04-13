@@ -35,7 +35,7 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     dados = np.loadtxt(caminho_do_arquivo, delimiter=',', dtype=np.float32)
     return torch.tensor(dados), dados
     
-def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=5, learning_rate=0.001):
+def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=3, learning_rate=0.001):
     # optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
     optimizer = optim.Adam(modelo.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
     num_usuarios, num_itens = avaliacoes.shape
@@ -48,7 +48,7 @@ def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=5, learning_rate
         loss.backward()
         optimizer.step()
 
-def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=5, learning_rate=0.001):
+def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=3, learning_rate=0.001):
     # Inicialização de dados e listas
     avaliacoes_final = avaliacoes_inicial.clone()
     modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes_inicial.size(0))] # criando uma cópia de modelo global inicial para cada usuário
@@ -62,7 +62,7 @@ def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=
     usuarios_ids, itens_ids = usuarios_ids.flatten().long(), itens_ids.flatten().long()
 
     for i, modelo_cliente in enumerate(modelos_clientes):
-        print(f"=== Treinamento no Cliente {i + 1} ===")
+        # print(f"=== Treinamento no Cliente {i + 1} ===")
         indices_nao_avaliados = (avaliacoes_inicial[i] == 0).nonzero(as_tuple=False).squeeze()
 
         indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
@@ -248,7 +248,7 @@ def main():
         recomendacoes_inicial_tensor4 = modelo_global_federado4(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
 
     
-    for round in range(1):
+    for round in range(5):
         print(f"\n=== ROUND {round} ===")
 
         print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")
