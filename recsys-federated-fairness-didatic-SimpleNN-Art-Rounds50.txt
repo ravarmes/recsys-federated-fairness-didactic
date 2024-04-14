@@ -87,6 +87,7 @@ RMSE Final [3 :: Média Ponderada Loss ] : 1.385591149
 RMSE Final [4 :: Média Ponderada NR   ] : 1.383839488
 RMSE Final [Não Federado              ] : 1.381943107
 
+------------------------------------------------------------------------------
 ROUNDS: 10 | Melhores hiperparâmetros: {'learning_rate': 0.034, 'epochs': 100}
 # Acertei as linhas:
 modelos_clientes_loss_ordenados = sorted(modelos_clientes_loss3, key=lambda x: x[1], reverse=False)
@@ -133,3 +134,6 @@ RMSE Final [2 :: Média Ponderada Rindv] : 1.391581655
 RMSE Final [3 :: Média Ponderada Loss ] : 1.391117454
 RMSE Final [4 :: Média Ponderada NR   ] : 1.391179681
 RMSE Final [Não Federado              ] : 1.388706207
+
+------------------------------------------------------------------------------
+ROUNDS: 15 | Melhores hiperparâmetros: {'learning_rate': 0.034, 'epochs': 100}
