@@ -6,3 +6,54 @@ epochs=3, learning_rate=0.001
 
 ROUND 5
 Início 14:40
+=== MEDIDA DE JUSTIÇA ===
+
+Polarization Inicial (Rpol)                : 0.023957029
+Polarization Final   (Rpol [1])            : 0.030062499
+Polarization Final   (Rpol [2])            : 0.030060885
+Polarization Final   (Rpol [3])            : 0.030061375
+Polarization Final   (Rpol [4])            : 0.030063465
+Polarization Final   (Rpol [Não Federado]) : 0.030055953
+
+Individual Loss Variance (Rindv Inicial)                            : 0.300770879
+Individual Loss Variance (Rindv Final [1 :: Média Aritmética     ]) : 1.117126107
+Individual Loss Variance (Rindv Final [2 :: Média Ponderada Rindv]) : 1.117135167
+Individual Loss Variance (Rindv Final [3 :: Média Ponderada Loss ]) : 1.117143035
+Individual Loss Variance (Rindv Final [4 :: Média Ponderada NR   ]) : 1.117058158
+Individual Loss Variance (Rindv Final [Não Federado              ]) : 1.117152452
+G_RINDV
+[284, 12, 166, 112, 223, 35, 171, 93, 257, 99, 50, 299, 1, 298, 138]
+G_LOSS
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+G_NR
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+
+Group Loss Variance (Rgrp Inicial)                              : 0.111877576
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética Rindv ]) : 0.924630344
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv  ]) : 0.924622178
+Group Loss Variance (Rgrp Final [Não Federado :: Rindv       ]) : 0.924485683
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética Loss  ]) : 0.007238429
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss   ]) : 0.007232628
+Group Loss Variance (Rgrp Final [Não Federado :: Loss        ]) : 0.007248249
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética NR    ]) : 0.007238429
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR     ]) : 0.007257955
+Group Loss Variance (Rgrp Final [Não Federado :: NR          ]) : 0.007248249
+
+RMSE Inicial                            : 1.299262285
+RMSE Final [1 :: Média Aritmética     ] : 1.825161934
+RMSE Final [2 :: Média Ponderada Rindv] : 1.825164080
+RMSE Final [3 :: Média Ponderada Loss ] : 1.825159669
+RMSE Final [4 :: Média Ponderada NR   ] : 1.825149059
+RMSE Final [Não Federado              ] : 1.825132847
+
+
+-------------------------------------------------------------------------------------
+embedding_size = 64
+hidden_size = 128
+modelo_global_federado1 = RecommendationNN(num_usuarios, num_itens, embedding_size, hidden_size)
+criterion = nn.MSELoss()
+epochs=50, learning_rate=0.001
+
+ROUND 10
