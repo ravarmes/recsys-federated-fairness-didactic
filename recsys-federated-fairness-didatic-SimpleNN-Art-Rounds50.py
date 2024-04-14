@@ -241,7 +241,7 @@ def main():
         recomendacoes_inicial_tensor4 = modelo_global_federado4(avaliacoes_inicial_tensor)
 
     
-    for round in range(15):
+    for round in range(5):
         print(f"\n=== ROUND {round} ===")
 
         print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")
