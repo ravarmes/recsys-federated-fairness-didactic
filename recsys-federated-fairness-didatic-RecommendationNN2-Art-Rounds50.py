@@ -54,8 +54,8 @@ def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=
     modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes_inicial.size(0))] # criando uma cópia de modelo global inicial para cada usuário
     modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr = [], [], []
     
-    NUMBER_ADVANTAGED_GROUP = 2
-    NR_ADVANTAGED_GROUP, NR_DISADVANTAGED_GROUP = 2, 0
+    NUMBER_ADVANTAGED_GROUP = 15
+    NR_ADVANTAGED_GROUP, NR_DISADVANTAGED_GROUP = 20, 2
 
     num_usuarios, num_itens = avaliacoes_inicial.shape
     usuarios_ids, itens_ids = torch.meshgrid(torch.arange(num_usuarios), torch.arange(num_itens), indexing='ij')
