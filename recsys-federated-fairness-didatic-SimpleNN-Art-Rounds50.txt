@@ -89,7 +89,10 @@ RMSE Final [Não Federado              ] : 1.381943107
 
 
 
-
+-----------------------------------------------------------------------------
+NR_ADVANTAGED_GROUP = 10      # número de avaliações geradas para os clientes do grupo dos favorecidos
+NR_DISADVANTAGED_GROUP = 1  # número de avaliações geradas para os clientes do grupo dos desfavorecidos
+------------------------------------------------------------------------------
 ------------------------------------------------------------------------------
 ROUNDS: 5 | Melhores hiperparâmetros: {'learning_rate': 0.034, 'epochs': 100}
 
@@ -279,6 +282,9 @@ RMSE Final [4 :: Média Ponderada NR   ] : 1.384418607
 RMSE Final [Não Federado              ] : 1.384172440
 
 
+-----------------------------------------------------------------------------
+NR_ADVANTAGED_GROUP = 20      # número de avaliações geradas para os clientes do grupo dos favorecidos
+NR_DISADVANTAGED_GROUP = 2  # número de avaliações geradas para os clientes do grupo dos desfavorecidos
 ------------------------------------------------------------------------------
 ROUNDS: 5 | Melhores hiperparâmetros: {'learning_rate': 0.034, 'epochs': 1200}
 
