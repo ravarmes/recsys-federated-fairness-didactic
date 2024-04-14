@@ -90,9 +90,6 @@ RMSE Final [Não Federado              ] : 1.381943107
 
 
 
-
-
-
 ------------------------------------------------------------------------------
 ROUNDS: 5 | Melhores hiperparâmetros: {'learning_rate': 0.034, 'epochs': 100}
 
@@ -280,3 +277,8 @@ RMSE Final [2 :: Média Ponderada Rindv] : 1.385800719
 RMSE Final [3 :: Média Ponderada Loss ] : 1.384522438
 RMSE Final [4 :: Média Ponderada NR   ] : 1.384418607
 RMSE Final [Não Federado              ] : 1.384172440
+
+
+------------------------------------------------------------------------------
+ROUNDS: 5 | Melhores hiperparâmetros: {'learning_rate': 0.034, 'epochs': 1200}
+
