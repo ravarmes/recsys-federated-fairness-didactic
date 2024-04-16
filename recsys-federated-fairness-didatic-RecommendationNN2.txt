@@ -57,3 +57,10 @@ criterion = nn.MSELoss()
 epochs=50, learning_rate=0.001
 
 ROUND 10
+
+-----------------------------------------------------------------------------
+NR_ADVANTAGED_GROUP = 20      # número de avaliações geradas para os clientes do grupo dos favorecidos
+NR_DISADVANTAGED_GROUP = 2  # número de avaliações geradas para os clientes do grupo dos desfavorecidos
+------------------------------------------------------------------------------
+ROUNDS: 25 | Melhores hiperparâmetros: {'learning_rate': 0.1, 'epochs': 10}
+Início: 21:40
