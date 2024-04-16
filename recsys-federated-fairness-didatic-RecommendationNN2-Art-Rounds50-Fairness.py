@@ -5,6 +5,7 @@ import numpy as np
 import copy
 import pandas as pd
 from AlgorithmUserFairness import RMSE, Polarization, IndividualLossVariance, GroupLossVariance
+from AlgorithmImpartiality import AlgorithmImpartiality
 
 class RecommendationNN(nn.Module):
     def __init__(self, num_users, num_items, embedding_size, hidden_size):
@@ -35,42 +36,42 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     dados = np.loadtxt(caminho_do_arquivo, delimiter=',', dtype=np.float32)
     return torch.tensor(dados), dados
     
-def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=3, learning_rate=0.001):
+def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=3, learning_rate=0.001):
     # optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
-    optimizer = optim.Adam(modelo.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
+    optimizer = optim.Adam(modelo_global.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
     num_usuarios, num_itens = avaliacoes.shape
     usuarios_ids, itens_ids = torch.meshgrid(torch.arange(num_usuarios), torch.arange(num_itens), indexing='ij')
     usuarios_ids, itens_ids = usuarios_ids.flatten(), itens_ids.flatten()
     for epoch in range(epochs):
         optimizer.zero_grad()
-        predictions = modelo(usuarios_ids.long(), itens_ids.long()).view(num_usuarios, num_itens)
+        predictions = modelo_global(usuarios_ids.long(), itens_ids.long()).view(num_usuarios, num_itens)
         loss = criterion(predictions, avaliacoes.float())
         loss.backward()
         optimizer.step()
 
-def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=3, learning_rate=0.001):
+def treinar_modelos_locais(modelo_global, avaliacoes, criterion, epochs=3, learning_rate=0.001):
     # Inicialização de dados e listas
-    avaliacoes_final = avaliacoes_inicial.clone()
-    modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes_inicial.size(0))] # criando uma cópia de modelo global inicial para cada usuário
+    avaliacoes_final = avaliacoes.clone()
+    modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes.size(0))] # criando uma cópia de modelo global inicial para cada usuário
     modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr = [], [], []
     
     NUMBER_ADVANTAGED_GROUP = 15
     NR_ADVANTAGED_GROUP, NR_DISADVANTAGED_GROUP = 20, 2
 
-    num_usuarios, num_itens = avaliacoes_inicial.shape
+    num_usuarios, num_itens = avaliacoes.shape
     usuarios_ids, itens_ids = torch.meshgrid(torch.arange(num_usuarios), torch.arange(num_itens), indexing='ij')
     usuarios_ids, itens_ids = usuarios_ids.flatten().long(), itens_ids.flatten().long()
 
     for i, modelo_cliente in enumerate(modelos_clientes):
         # print(f"=== Treinamento no Cliente {i + 1} ===")
-        indices_nao_avaliados = (avaliacoes_inicial[i] == 0).nonzero(as_tuple=False).squeeze()
+        indices_nao_avaliados = (avaliacoes[i] == 0).nonzero(as_tuple=False).squeeze()
 
         indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
         novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP,)).float()
         modelos_clientes_nr.append((i, NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP))
 
         avaliacoes_final[i, indices_novas_avaliacoes] = novas_avaliacoes
-        avaliacoes_final_cliente = avaliacoes_inicial.clone()
+        avaliacoes_final_cliente = avaliacoes.clone()
         avaliacoes_final_cliente[i, indices_novas_avaliacoes] = novas_avaliacoes
 
         # optimizer_cliente = optim.SGD(modelo_cliente.parameters(), lr=learning_rate)
@@ -210,6 +211,38 @@ def agregar_modelos_locais_ao_global_media_poderada_pesos_nr(modelo_global, mode
                 param_medio += peso * cliente_params
             param_global.copy_(param_medio)
 
+def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global, avaliacoes, G):
+    
+    avaliacoes_np = avaliacoes.numpy()
+    avaliacoes_df = pd.DataFrame(avaliacoes_np)
+
+    omega = (avaliacoes_df != 0)
+
+    num_usuarios, num_itens = avaliacoes.shape
+    usuarios_ids, itens_ids = torch.meshgrid(torch.arange(num_usuarios), torch.arange(num_itens), indexing='ij')
+    usuarios_ids, itens_ids = usuarios_ids.flatten(), itens_ids.flatten()
+    with torch.no_grad():
+        recomendacoes_tensor = modelo_global(usuarios_ids.long(), itens_ids.long()).view(num_usuarios, num_itens)
+
+    recomendacoes_np = recomendacoes_tensor.numpy()
+    recomendacoes_df = pd.DataFrame(recomendacoes_np)
+
+    ilv = IndividualLossVariance(avaliacoes_df, omega, 1)
+
+    algorithmImpartiality_01_ma_rindv_np = AlgorithmImpartiality(avaliacoes_df, omega, 1)
+    list_X_est = algorithmImpartiality_01_ma_rindv_np.evaluate(recomendacoes_df, 3) # calculates a list of h estimated matrices => h = 3
+
+    list_losses = []
+    for X_est in list_X_est:
+        losses = ilv.get_losses(X_est)
+        list_losses.append(losses)
+
+    Z = AlgorithmImpartiality.losses_to_Z(list_losses, num_usuarios)
+    list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
+    recomendacoes_fairness_np = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) # recomendações com justiça
+    return recomendacoes_fairness_np
+
+
 def main():
     print("\n=== SERVIDOR (ETAPA DE TREINAMENTO INICIAL) ===")
     caminho_do_arquivo = 'X_MovieLens-1M.xlsx'
@@ -232,34 +265,67 @@ def main():
     embedding_size = 64
     hidden_size = 128
 
-    modelo_global_federado1 = RecommendationNN(num_usuarios, num_itens, embedding_size, hidden_size)
+    modelo_global_federado_01_ma_rindv_tensor = RecommendationNN(num_usuarios, num_itens, embedding_size, hidden_size)
     criterion = nn.MSELoss() 
 
-    treinar_modelo_global(modelo_global_federado1, avaliacoes_inicial_tensor, criterion)
-    modelo_global_nao_federado = copy.deepcopy(modelo_global_federado1)
-    modelo_global_federado2 = copy.deepcopy(modelo_global_federado1)
-    modelo_global_federado3 = copy.deepcopy(modelo_global_federado1)
-    modelo_global_federado4 = copy.deepcopy(modelo_global_federado1)
+    # Realizando cópias do modelo global para cada uma das situações a serem analisadas
+    treinar_modelo_global(modelo_global_federado_01_ma_rindv_tensor, avaliacoes_inicial_tensor, criterion)
+    modelo_global_federado_02_mp_rindv_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
+    modelo_global_federado_03_mp_loss_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
+    modelo_global_federado_04_mp_nr_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
+
+    modelo_global_federado_05_ma_rindv_fairness_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
+    modelo_global_federado_06_mp_rindv_fairness_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
+    modelo_global_federado_07_mp_loss_fairness_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
+    modelo_global_federado_08_mp_nr_fairness_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
+
+    modelo_global_naofederado_09_ma_rindv_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
+    modelo_global_naofederado_10_mp_rindv_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
+    modelo_global_naofederado_11_mp_loss_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
+    modelo_global_naofederado_12_mp_nr_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
+
 
     with torch.no_grad():
-        recomendacoes_inicial_tensor1 = modelo_global_federado1(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_inicial_tensor2 = modelo_global_federado2(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_inicial_tensor3 = modelo_global_federado3(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_inicial_tensor4 = modelo_global_federado4(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        recomendacoes_inicial_01_ma_rindv_tensor = modelo_global_federado_01_ma_rindv_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        # recomendacoes_inicial_02_mp_rindv_tensor = modelo_global_federado_02_mp_rindv_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        # recomendacoes_inicial_03_mp_loss_tensor = modelo_global_federado_03_mp_loss_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        # recomendacoes_inicial_04_mp_nr_tensor = modelo_global_federado_04_mp_nr_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
 
+        # recomendacoes_inicial_05_ma_rindv_fairness_tensor = modelo_global_federado_05_ma_rindv_fairness_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        # recomendacoes_inicial_06_mp_rindv_fairness_tensor = modelo_global_federado_06_mp_rindv_fairness_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        # recomendacoes_inicial_07_mp_loss_fairness_tensor = modelo_global_federado_07_mp_loss_fairness_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        # recomendacoes_inicial_08_mp_nr_fairness_tensor = modelo_global_federado_08_mp_nr_fairness_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+
+    avaliacoes_final_01_ma_rindv_tensor = avaliacoes_inicial_tensor
+    avaliacoes_final_02_mp_rindv_tensor = avaliacoes_inicial_tensor
+    avaliacoes_final_03_mp_loss_tensor = avaliacoes_inicial_tensor
+    avaliacoes_final_04_mp_nr_tensor = avaliacoes_inicial_tensor
+
+    avaliacoes_final_05_ma_rindv_fairness_tensor = avaliacoes_inicial_tensor
+    avaliacoes_final_06_mp_rindv_fairness_tensor = avaliacoes_inicial_tensor
+    avaliacoes_final_07_mp_loss_fairness_tensor = avaliacoes_inicial_tensor
+    avaliacoes_final_08_mp_nr_fairness_tensor = avaliacoes_inicial_tensor
+
+    avaliacoes_final_09_ma_rindv_naofederado_tensor = avaliacoes_inicial_tensor
+    avaliacoes_final_10_mp_rindv_naofederado_tensor = avaliacoes_inicial_tensor
+    avaliacoes_final_11_mp_loss_naofederado_tensor = avaliacoes_inicial_tensor
+    avaliacoes_final_12_mp_nr_naofederado_tensor = avaliacoes_inicial_tensor
     
-    for round in range(5):
+    for round in range(1):
         print(f"\n=== ROUND {round} ===")
 
         print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")
-        print("treinar_modelos_locais :: modelo_global_federado1")
-        avaliacoes_final_tensor1, modelos_clientes1, modelos_clientes_rindv1, modelos_clientes_loss1, modelos_clientes_nr1 = treinar_modelos_locais(modelo_global_federado1, avaliacoes_inicial_tensor, criterion)
-        print("treinar_modelos_locais :: modelo_global_federado2")
-        avaliacoes_final_tensor2, modelos_clientes2, modelos_clientes_rindv2, modelos_clientes_loss2, modelos_clientes_nr2 = treinar_modelos_locais(modelo_global_federado2, avaliacoes_inicial_tensor, criterion)
-        print("treinar_modelos_locais :: modelo_global_federado3")
-        avaliacoes_final_tensor3, modelos_clientes3, modelos_clientes_rindv3, modelos_clientes_loss3, modelos_clientes_nr3 = treinar_modelos_locais(modelo_global_federado3, avaliacoes_inicial_tensor, criterion)
-        print("treinar_modelos_locais :: modelo_global_federado4")
-        avaliacoes_final_tensor4, modelos_clientes4, modelos_clientes_rindv4, modelos_clientes_loss4, modelos_clientes_nr4 = treinar_modelos_locais(modelo_global_federado4, avaliacoes_inicial_tensor, criterion)
+        print("treinar_modelos_locais :: modelos_clientes_01_ma_rindv_tensor")
+        avaliacoes_final_01_ma_rindv_tensor, modelos_clientes_01_ma_rindv_tensor, calculos_modelos_clientes_01_rindv, calculos_modelos_clientes_01_loss, calculos_modelos_clientes_01_nr = treinar_modelos_locais(modelo_global_federado_01_ma_rindv_tensor, avaliacoes_final_01_ma_rindv_tensor, criterion)
+        print("treinar_modelos_locais :: modelos_clientes_02_mp_rindv_tensor")
+        avaliacoes_final_02_mp_rindv_tensor, modelos_clientes_02_mp_rindv_tensor, calculos_modelos_clientes_02_rindv, calculos_modelos_clientes_02_loss, calculos_modelos_clientes_02_nr = treinar_modelos_locais(modelo_global_federado_02_mp_rindv_tensor, avaliacoes_final_02_mp_rindv_tensor, criterion)
+        print("treinar_modelos_locais :: modelos_clientes_03_mp_loss_tensor")
+        avaliacoes_final_03_mp_loss_tensor, modelos_clientes_03_mp_loss_tensor, calculos_modelos_clientes_03_rindv, calculos_modelos_clientes_03_loss, calculos_modelos_clientes_03_nr = treinar_modelos_locais(modelo_global_federado_03_mp_loss_tensor, avaliacoes_final_03_mp_loss_tensor, criterion)
+        print("treinar_modelos_locais :: modelos_clientes_04_mp_nr_tensor")
+        avaliacoes_final_04_mp_nr_tensor, modelos_clientes_04_mp_nr_tensor, calculos_modelos_clientes_04_rindv, calculos_modelos_clientes_04_loss, calculos_modelos_clientes_04_nr = treinar_modelos_locais(modelo_global_federado_04_mp_nr_tensor, avaliacoes_final_04_mp_nr_tensor, criterion)
+
+        print("treinar_modelos_locais :: modelos_clientes_05_ma_rindv_fairness_tensor")
+        avaliacoes_final_05_ma_rindv_fairness_tensor, modelos_clientes_05_ma_rindv_fairness_tensor, calculos_modelos_clientes_05_rindv_fairness, calculos_modelos_clientes_05_loss_fairness, calculos_modelos_clientes_05_nr_fairness = treinar_modelos_locais(modelo_global_federado_05_ma_rindv_fairness_tensor, avaliacoes_final_05_ma_rindv_fairness_tensor, criterion)
 
         # print("\nmodelos_clientes_rindv")
         # print(modelos_clientes_rindv)
@@ -269,79 +335,100 @@ def main():
         # print(modelos_clientes_nr)
 
         print("\n=== SERVIDOR (ETAPA DE TREINAMENTO FINAL - AGREGAÇÃO) ===")
-        print("agregar_modelos_locais_ao_global_media_aritmetica_pesos :: modelo_global_federado1")
-        agregar_modelos_locais_ao_global_media_aritmetica_pesos(modelo_global_federado1, modelos_clientes1)
+        print("agregar_modelos_locais_ao_global_media_aritmetica_pesos :: modelo_global_federado_01_ma_rindv_tensor")
+        agregar_modelos_locais_ao_global_media_aritmetica_pesos(modelo_global_federado_01_ma_rindv_tensor, modelos_clientes_01_ma_rindv_tensor)
         # agregar_modelos_locais_ao_global_media_aritmetica_gradientes(modelo_global_federado1, modelos_clientes)
-        print("agregar_modelos_locais_ao_global_media_poderada_pesos_rindv :: modelo_global_federado2")
-        agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(modelo_global_federado2, modelos_clientes2, modelos_clientes_rindv2)
-        print("agregar_modelos_locais_ao_global_media_poderada_pesos_loss :: modelo_global_federado3")
-        agregar_modelos_locais_ao_global_media_poderada_pesos_loss(modelo_global_federado3, modelos_clientes3, modelos_clientes_loss3)
-        print("agregar_modelos_locais_ao_global_media_poderada_pesos_nr :: modelo_global_federado4")
-        agregar_modelos_locais_ao_global_media_poderada_pesos_nr(modelo_global_federado4, modelos_clientes4, modelos_clientes_nr4)
+        print("agregar_modelos_locais_ao_global_media_poderada_pesos_rindv :: modelo_global_federado_02_mp_rindv_tensor")
+        agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(modelo_global_federado_02_mp_rindv_tensor, modelos_clientes_02_mp_rindv_tensor, calculos_modelos_clientes_02_rindv)
+        print("agregar_modelos_locais_ao_global_media_poderada_pesos_loss :: modelo_global_federado_03_mp_loss_tensor")
+        agregar_modelos_locais_ao_global_media_poderada_pesos_loss(modelo_global_federado_03_mp_loss_tensor, modelos_clientes_03_mp_loss_tensor, calculos_modelos_clientes_03_loss)
+        print("agregar_modelos_locais_ao_global_media_poderada_pesos_nr :: modelo_global_federado_04_mp_nr_tensor")
+        agregar_modelos_locais_ao_global_media_poderada_pesos_nr(modelo_global_federado_04_mp_nr_tensor, modelos_clientes_04_mp_nr_tensor, calculos_modelos_clientes_04_nr)
 
-        # treinar_modelo_global(modelo_global_federado1, avaliacoes_final_tensor1, criterion) 
-        # treinar_modelo_global(modelo_global_federado2, avaliacoes_final_tensor2, criterion) 
-        # treinar_modelo_global(modelo_global_federado3, avaliacoes_final_tensor3, criterion) 
-        # treinar_modelo_global(modelo_global_federado4, avaliacoes_final_tensor4, criterion) 
-        treinar_modelo_global(modelo_global_nao_federado, avaliacoes_final_tensor1, criterion) 
+        print("agregar_modelos_locais_ao_global_media_aritmetica_pesos :: modelo_global_federado_05_ma_rindv_fairness_tensor")
+        agregar_modelos_locais_ao_global_media_aritmetica_pesos(modelo_global_federado_05_ma_rindv_fairness_tensor, modelos_clientes_05_ma_rindv_fairness_tensor)
+
+        recomendacoes_final_05_ma_rindv_fairness_df = aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global_federado_05_ma_rindv_fairness_tensor, avaliacoes_final_05_ma_rindv_fairness_tensor)
+        # recomendacoes_final_05_ma_rindv_tensor = torch.tensor(recomendacoes_final_05_ma_rindv_df.values, dtype=torch.float32) # Converter o DataFrame para um tensor PyTorch
+        treinar_modelo_global(modelo_global_federado_05_ma_rindv_fairness_tensor, recomendacoes_final_05_ma_rindv_fairness_df, criterion)
+
+        treinar_modelo_global(modelo_global_naofederado_09_ma_rindv_tensor, avaliacoes_final_01_ma_rindv_tensor, criterion) # consideramos as avaliações geradas no treinamento dos modelos_clientes_01_ma_rindv_tensor 
+
+
+        # Chamar a função para gerar modelo_global_federados com justiça
+
 
     with torch.no_grad():
-        recomendacoes_final_tensor1 = modelo_global_federado1(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_final_tensor2 = modelo_global_federado2(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_final_tensor3 = modelo_global_federado3(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_final_tensor4 = modelo_global_federado4(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_modelo_global_nao_federado_tensor = modelo_global_nao_federado(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-
+        recomendacoes_final_01_ma_rindv_tensor = modelo_global_federado_01_ma_rindv_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        recomendacoes_final_02_mp_rindv_tensor = modelo_global_federado_02_mp_rindv_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        recomendacoes_final_03_mp_loss_tensor = modelo_global_federado_03_mp_loss_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        recomendacoes_final_04_mp_nr_tensor = modelo_global_federado_04_mp_nr_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        recomendacoes_final_05_ma_rindv_fairness_tensor = modelo_global_federado_05_ma_rindv_fairness_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        recomendacoes_final_nao_federado_tensor = modelo_global_naofederado_09_ma_rindv_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
 
     
     print("\n=== MEDIDA DE JUSTIÇA ===")
     avaliacoes_inicial_np = avaliacoes_inicial_tensor.numpy()
     avaliacoes_inicial_df = pd.DataFrame(avaliacoes_inicial_np)
-    avaliacoes_final_np = avaliacoes_final_tensor1.numpy()
-    avaliacoes_final_df = pd.DataFrame(avaliacoes_final_np)
-    recomendacoes_inicial_np = recomendacoes_inicial_tensor1.numpy()
-    recomendacoes_inicial_df = pd.DataFrame(recomendacoes_inicial_np)
-    recomendacoes_final_np1 = recomendacoes_final_tensor1.numpy()
-    recomendacoes_final_df1 = pd.DataFrame(recomendacoes_final_np1)
-    recomendacoes_final_np2 = recomendacoes_final_tensor2.numpy()
-    recomendacoes_final_df2 = pd.DataFrame(recomendacoes_final_np2)
-    recomendacoes_final_np3 = recomendacoes_final_tensor3.numpy()
-    recomendacoes_final_df3 = pd.DataFrame(recomendacoes_final_np3)
-    recomendacoes_final_np4 = recomendacoes_final_tensor4.numpy()
-    recomendacoes_final_df4 = pd.DataFrame(recomendacoes_final_np4)
-    recomendacoes_modelo_global_nao_federado_np = recomendacoes_modelo_global_nao_federado_tensor.numpy()
-    recomendacoes_modelo_global_nao_federado_df = pd.DataFrame(recomendacoes_modelo_global_nao_federado_np)
+    avaliacoes_final_01_ma_rindv_np = avaliacoes_final_01_ma_rindv_tensor.numpy()
+    avaliacoes_final_01_ma_rindv_df = pd.DataFrame(avaliacoes_final_01_ma_rindv_np)
+    avaliacoes_final_02_mp_rindv_np = avaliacoes_final_01_ma_rindv_tensor.numpy()
+    avaliacoes_final_02_mp_rindv_df = pd.DataFrame(avaliacoes_final_01_ma_rindv_np)
+    avaliacoes_final_03_mp_loss_np = avaliacoes_final_01_ma_rindv_tensor.numpy()
+    avaliacoes_final_03_mp_losso_df = pd.DataFrame(avaliacoes_final_01_ma_rindv_np)
+    avaliacoes_final_04_mp_nr_np = avaliacoes_final_01_ma_rindv_tensor.numpy()
+    avaliacoes_final_04_mp_nr_df = pd.DataFrame(avaliacoes_final_01_ma_rindv_np)
+    avaliacoes_final_05_ma_rindv_np = avaliacoes_final_01_ma_rindv_tensor.numpy()
+    avaliacoes_final_05_ma_rindv_df = pd.DataFrame(avaliacoes_final_01_ma_rindv_np)
+
+    recomendacoes_inicial_01_ma_rindv_np = recomendacoes_inicial_01_ma_rindv_tensor.numpy()
+    recomendacoes_inicial_01_ma_rindv_df = pd.DataFrame(recomendacoes_inicial_01_ma_rindv_np)
+    recomendacoes_final_01_ma_rindv_np = recomendacoes_final_01_ma_rindv_tensor.numpy()
+    recomendacoes_final_01_ma_rindv_df = pd.DataFrame(recomendacoes_final_01_ma_rindv_np)
+    recomendacoes_final_02_mp_rindv_np = recomendacoes_final_02_mp_rindv_tensor.numpy()
+    recomendacoes_final_02_mp_rindv_df = pd.DataFrame(recomendacoes_final_02_mp_rindv_np)
+    recomendacoes_final_03_mp_loss_np = recomendacoes_final_03_mp_loss_tensor.numpy()
+    recomendacoes_final_03_mp_loss_df = pd.DataFrame(recomendacoes_final_03_mp_loss_np)
+    recomendacoes_final_04_mp_nr_np = recomendacoes_final_04_mp_nr_tensor.numpy()
+    recomendacoes_final_04_mp_nr_df = pd.DataFrame(recomendacoes_final_04_mp_nr_np)
+    recomendacoes_final_05_ma_rindv_fairness_np = recomendacoes_final_05_ma_rindv_fairness_tensor.numpy()
+    recomendacoes_final_05_ma_rindv_fairness_df = pd.DataFrame(recomendacoes_final_05_ma_rindv_fairness_np)
+    recomendacoes_final_nao_federado_np = recomendacoes_final_nao_federado_tensor.numpy()
+    recomendacoes_final_nao_federado_df = pd.DataFrame(recomendacoes_final_nao_federado_np)
 
     omega_inicial = (avaliacoes_inicial_df != 0)
-    omega_final = (avaliacoes_final_df != 0)    
+    omega_final = (avaliacoes_final_01_ma_rindv_df != 0)    
 
     # To capture polarization, we seek to measure the extent to which the user ratings disagree
     polarization = Polarization()
-    Rpol_inicial = polarization.evaluate(recomendacoes_inicial_df)
-    Rpol_final1 = polarization.evaluate(recomendacoes_final_df1)
-    Rpol_final2 = polarization.evaluate(recomendacoes_final_df2)
-    Rpol_final3 = polarization.evaluate(recomendacoes_final_df3)
-    Rpol_final4 = polarization.evaluate(recomendacoes_final_df4)
-    Rpol_final_nao_federado = polarization.evaluate(recomendacoes_modelo_global_nao_federado_df)
+    Rpol_inicial = polarization.evaluate(recomendacoes_inicial_01_ma_rindv_df)
+    Rpol_final1 = polarization.evaluate(recomendacoes_final_01_ma_rindv_df)
+    Rpol_final2 = polarization.evaluate(recomendacoes_final_02_mp_rindv_df)
+    Rpol_final3 = polarization.evaluate(recomendacoes_final_03_mp_loss_df)
+    Rpol_final4 = polarization.evaluate(recomendacoes_final_04_mp_nr_df)
+    Rpol_final5 = polarization.evaluate(recomendacoes_final_05_ma_rindv_fairness_df)
+    Rpol_final_nao_federado = polarization.evaluate(recomendacoes_final_nao_federado_df)
     print(f"\nPolarization Inicial (Rpol)                : {Rpol_inicial:.9f}")
     print(f"Polarization Final   (Rpol [1])            : {Rpol_final1:.9f}")
     print(f"Polarization Final   (Rpol [2])            : {Rpol_final2:.9f}")
     print(f"Polarization Final   (Rpol [3])            : {Rpol_final3:.9f}")
     print(f"Polarization Final   (Rpol [4])            : {Rpol_final4:.9f}")
+    print(f"Polarization Final   (Rpol [5])            : {Rpol_final5:.9f}")
     print(f"Polarization Final   (Rpol [Não Federado]) : {Rpol_final_nao_federado:.9f}")
 
     ilv_inicial = IndividualLossVariance(avaliacoes_inicial_df, omega_inicial, 1) #axis = 1 (0 rows e 1 columns)
-    ilv_final1 = IndividualLossVariance(avaliacoes_final_df, omega_final, 1) #axis = 1 (0 rows e 1 columns)
-    ilv_final2 = IndividualLossVariance(avaliacoes_final_df, omega_final, 1) #axis = 1 (0 rows e 1 columns)
-    ilv_final3 = IndividualLossVariance(avaliacoes_final_df, omega_final, 1) #axis = 1 (0 rows e 1 columns)
-    ilv_final4 = IndividualLossVariance(avaliacoes_final_df, omega_final, 1) #axis = 1 (0 rows e 1 columns)
-    ilv_final_nao_federado = IndividualLossVariance(avaliacoes_final_df, omega_final, 1) #axis = 1 (0 rows e 1 columns)
-    Rindv_inicial = ilv_inicial.evaluate(recomendacoes_inicial_df)
-    Rindv_final1 = ilv_final1.evaluate(recomendacoes_final_df1)
-    Rindv_final2 = ilv_final2.evaluate(recomendacoes_final_df2)
-    Rindv_final3 = ilv_final3.evaluate(recomendacoes_final_df3)
-    Rindv_final4 = ilv_final4.evaluate(recomendacoes_final_df4)
-    Rindv_final_nao_federado = ilv_final_nao_federado.evaluate(recomendacoes_modelo_global_nao_federado_df)
+    ilv_final1 = IndividualLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final, 1) #axis = 1 (0 rows e 1 columns)
+    ilv_final2 = IndividualLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final, 1) #axis = 1 (0 rows e 1 columns)
+    ilv_final3 = IndividualLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final, 1) #axis = 1 (0 rows e 1 columns)
+    ilv_final4 = IndividualLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final, 1) #axis = 1 (0 rows e 1 columns)
+    ilv_final5 = IndividualLossVariance(avaliacoes_final_05_ma_rindv_fairness_df, omega_final, 1) #axis = 1 (0 rows e 1 columns)
+    ilv_final_nao_federado = IndividualLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final, 1) #axis = 1 (0 rows e 1 columns)
+    Rindv_inicial = ilv_inicial.evaluate(recomendacoes_inicial_01_ma_rindv_df)
+    Rindv_final1 = ilv_final1.evaluate(recomendacoes_final_01_ma_rindv_df)
+    Rindv_final2 = ilv_final2.evaluate(recomendacoes_final_02_mp_rindv_df)
+    Rindv_final3 = ilv_final3.evaluate(recomendacoes_final_03_mp_loss_df)
+    Rindv_final4 = ilv_final4.evaluate(recomendacoes_final_04_mp_nr_df)
+    Rindv_final_nao_federado = ilv_final_nao_federado.evaluate(recomendacoes_final_nao_federado_df)
     print(f"\nIndividual Loss Variance (Rindv Inicial)                            : {Rindv_inicial:.9f}")
     print(f"Individual Loss Variance (Rindv Final [1 :: Média Aritmética     ]) : {Rindv_final1:.9f}")
     print(f"Individual Loss Variance (Rindv Final [2 :: Média Ponderada Rindv]) : {Rindv_final2:.9f}")
@@ -352,19 +439,19 @@ def main():
     # # G group: identifying the groups (NR: users grouped by number of ratings for available items)
     # # advantaged group: 5% users with the highest number of item ratings
     # # disadvantaged group: 95% users with the lowest number of item ratings
-    modelos_clientes_rindv_ordenados = sorted(modelos_clientes_rindv1, key=lambda x: x[1], reverse=False)
+    modelos_clientes_rindv_ordenados = sorted(calculos_modelos_clientes_02_rindv, key=lambda x: x[1], reverse=False)
     list_users_rindv = [i for i, _ in modelos_clientes_rindv_ordenados]
     advantaged_group_rindv = list_users_rindv[0:15]
     disadvantaged_group_rindv = list_users_rindv[15:300]
     G_RINDV = {1: advantaged_group_rindv, 2: disadvantaged_group_rindv}
 
-    modelos_clientes_loss_ordenados = sorted(modelos_clientes_loss3, key=lambda x: x[1], reverse=False)
+    modelos_clientes_loss_ordenados = sorted(calculos_modelos_clientes_03_loss, key=lambda x: x[1], reverse=False)
     list_users_loss = [i for i, _ in modelos_clientes_loss_ordenados]
     advantaged_group_loss = list_users_loss[0:15]
     disadvantaged_group_loss = list_users_loss[15:300]
     G_LOSS = {1: advantaged_group_loss, 2: disadvantaged_group_loss}
     
-    modelos_clientes_nr_ordenados = sorted(modelos_clientes_nr4, key=lambda x: x[1], reverse=True)
+    modelos_clientes_nr_ordenados = sorted(calculos_modelos_clientes_04_nr, key=lambda x: x[1], reverse=True)
     list_users_nr = [i for i, _ in modelos_clientes_nr_ordenados]
     advantaged_group_nr = list_users_nr[0:15]
     disadvantaged_group_nr = list_users_nr[15:300]
@@ -380,25 +467,25 @@ def main():
     print(G_NR[1])
 
     glv_inicial = GroupLossVariance(avaliacoes_inicial_df, omega_inicial, G_RINDV, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final1_rindv = GroupLossVariance(avaliacoes_final_df, omega_final, G_RINDV, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final1_loss = GroupLossVariance(avaliacoes_final_df, omega_final, G_LOSS, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final1_nr = GroupLossVariance(avaliacoes_final_df, omega_final, G_NR, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final2 = GroupLossVariance(avaliacoes_final_df, omega_final, G_RINDV, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final3 = GroupLossVariance(avaliacoes_final_df, omega_final, G_LOSS, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final4 = GroupLossVariance(avaliacoes_final_df, omega_final, G_NR, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final_nao_federado1_rindv = GroupLossVariance(avaliacoes_final_df, omega_final, G_RINDV, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final_nao_federado2_loss = GroupLossVariance(avaliacoes_final_df, omega_final, G_LOSS, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final_nao_federado3_nr = GroupLossVariance(avaliacoes_final_df, omega_final, G_NR, 1) #axis = 1 (0 rows e 1 columns)
-    RgrpNR_inicial = glv_inicial.evaluate(recomendacoes_inicial_df)
-    RgrpNR_final1_rindv = glv_final1_rindv.evaluate(recomendacoes_final_df1)
-    RgrpNR_final1_loss = glv_final1_loss.evaluate(recomendacoes_final_df1)
-    RgrpNR_final1_nr = glv_final1_nr.evaluate(recomendacoes_final_df1)
-    RgrpNR_final2 = glv_final2.evaluate(recomendacoes_final_df2)
-    RgrpNR_final3 = glv_final3.evaluate(recomendacoes_final_df3)
-    RgrpNR_final4 = glv_final4.evaluate(recomendacoes_final_df4)
-    RgrpNR_final_nao_federado1_rindv = glv_final_nao_federado1_rindv.evaluate(recomendacoes_modelo_global_nao_federado_df)
-    RgrpNR_final_nao_federado2_loss = glv_final_nao_federado2_loss.evaluate(recomendacoes_modelo_global_nao_federado_df)
-    RgrpNR_final_nao_federado3_nr = glv_final_nao_federado3_nr.evaluate(recomendacoes_modelo_global_nao_federado_df)
+    glv_final1_rindv = GroupLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final, G_RINDV, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final1_loss = GroupLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final, G_LOSS, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final1_nr = GroupLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final, G_NR, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final2 = GroupLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final, G_RINDV, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final3 = GroupLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final, G_LOSS, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final4 = GroupLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final, G_NR, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final_nao_federado1_rindv = GroupLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final, G_RINDV, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final_nao_federado2_loss = GroupLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final, G_LOSS, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final_nao_federado3_nr = GroupLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final, G_NR, 1) #axis = 1 (0 rows e 1 columns)
+    RgrpNR_inicial = glv_inicial.evaluate(recomendacoes_inicial_01_ma_rindv_df)
+    RgrpNR_final1_rindv = glv_final1_rindv.evaluate(recomendacoes_final_01_ma_rindv_df)
+    RgrpNR_final1_loss = glv_final1_loss.evaluate(recomendacoes_final_01_ma_rindv_df)
+    RgrpNR_final1_nr = glv_final1_nr.evaluate(recomendacoes_final_01_ma_rindv_df)
+    RgrpNR_final2 = glv_final2.evaluate(recomendacoes_final_02_mp_rindv_df)
+    RgrpNR_final3 = glv_final3.evaluate(recomendacoes_final_03_mp_loss_df)
+    RgrpNR_final4 = glv_final4.evaluate(recomendacoes_final_04_mp_nr_df)
+    RgrpNR_final_nao_federado1_rindv = glv_final_nao_federado1_rindv.evaluate(recomendacoes_final_nao_federado_df)
+    RgrpNR_final_nao_federado2_loss = glv_final_nao_federado2_loss.evaluate(recomendacoes_final_nao_federado_df)
+    RgrpNR_final_nao_federado3_nr = glv_final_nao_federado3_nr.evaluate(recomendacoes_final_nao_federado_df)
     print(f"\nGroup Loss Variance (Rgrp Inicial)                              : {RgrpNR_inicial:.9f}")
     print(f"Group Loss Variance (Rgrp Final [1 :: Média Aritmética Rindv ]) : {RgrpNR_final1_rindv:.9f}")
     print(f"Group Loss Variance (Rgrp Final [1 :: Média Aritmética Loss  ]) : {RgrpNR_final1_loss:.9f}")
@@ -411,17 +498,17 @@ def main():
     print(f"Group Loss Variance (Rgrp Final [Não Federado :: NR          ]) : {RgrpNR_final_nao_federado3_nr:.9f}")
 
     rmse_inicial = RMSE(avaliacoes_inicial_df, omega_inicial)
-    result_inicial = rmse_inicial.evaluate(recomendacoes_inicial_df)
-    rmse_final1 = RMSE(avaliacoes_final_df, omega_final)
-    result_final1 = rmse_final1.evaluate(recomendacoes_final_df1)
-    rmse_final2 = RMSE(avaliacoes_final_df, omega_final)
-    result_final2 = rmse_final2.evaluate(recomendacoes_final_df2)
-    rmse_final3 = RMSE(avaliacoes_final_df, omega_final)
-    result_final3 = rmse_final3.evaluate(recomendacoes_final_df3)
-    rmse_final4 = RMSE(avaliacoes_final_df, omega_final)
-    result_final4 = rmse_final4.evaluate(recomendacoes_final_df4)
-    rmse_final_nao_federado = RMSE(avaliacoes_final_df, omega_final)
-    result_final_nao_federado = rmse_final_nao_federado.evaluate(recomendacoes_modelo_global_nao_federado_df)
+    result_inicial = rmse_inicial.evaluate(recomendacoes_inicial_01_ma_rindv_df)
+    rmse_final1 = RMSE(avaliacoes_final_01_ma_rindv_df, omega_final)
+    result_final1 = rmse_final1.evaluate(recomendacoes_final_01_ma_rindv_df)
+    rmse_final2 = RMSE(avaliacoes_final_01_ma_rindv_df, omega_final)
+    result_final2 = rmse_final2.evaluate(recomendacoes_final_02_mp_rindv_df)
+    rmse_final3 = RMSE(avaliacoes_final_01_ma_rindv_df, omega_final)
+    result_final3 = rmse_final3.evaluate(recomendacoes_final_03_mp_loss_df)
+    rmse_final4 = RMSE(avaliacoes_final_01_ma_rindv_df, omega_final)
+    result_final4 = rmse_final4.evaluate(recomendacoes_final_04_mp_nr_df)
+    rmse_final_nao_federado = RMSE(avaliacoes_final_01_ma_rindv_df, omega_final)
+    result_final_nao_federado = rmse_final_nao_federado.evaluate(recomendacoes_final_nao_federado_df)
     print(f'\nRMSE Inicial                            : {result_inicial:.9f}')
     print(f'RMSE Final [1 :: Média Aritmética     ] : {result_final1:.9f}')
     print(f'RMSE Final [2 :: Média Ponderada Rindv] : {result_final2:.9f}')
