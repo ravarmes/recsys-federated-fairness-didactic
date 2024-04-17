@@ -510,13 +510,15 @@ G_NR
 
 Group Loss Variance (Rgrp Inicial)                              : 0.023165960
 Group Loss Variance (Rgrp Final [1 :: Média Aritmética Rindv ]) : 0.215423733
-Group Loss Variance (Rgrp Final [1 :: Média Aritmética Loss  ]) : 0.076514393
-Group Loss Variance (Rgrp Final [1 :: Média Aritmética NR    ]) : 0.196659610
 Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv  ]) : 0.202260375
-Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss   ]) : 0.061836317
-Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR     ]) : 0.173370555
 Group Loss Variance (Rgrp Final [Não Federado :: Rindv       ]) : 0.217618510
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética Loss  ]) : 0.076514393
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss   ]) : 0.061836317
 Group Loss Variance (Rgrp Final [Não Federado :: Loss        ]) : 0.069008544
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética NR    ]) : 0.196659610
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR     ]) : 0.173370555
 Group Loss Variance (Rgrp Final [Não Federado :: NR          ]) : 0.198989570
 
 RMSE Inicial                            : 1.523503661
