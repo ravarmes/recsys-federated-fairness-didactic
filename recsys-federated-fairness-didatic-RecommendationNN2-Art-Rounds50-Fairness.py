@@ -316,16 +316,16 @@ def main():
 
         print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")
         print("treinar_modelos_locais :: modelos_clientes_01_ma_rindv_tensor")
-        avaliacoes_final_01_ma_tensor, modelos_clientes_01_ma_tensor, calculos_modelos_clientes_01_rindv, calculos_modelos_clientes_01_loss, calculos_modelos_clientes_01_nr = treinar_modelos_locais(modelo_global_federado_01_ma_tensor, avaliacoes_final_01_ma_tensor, criterion)
+        avaliacoes_final_01_ma_tensor, modelos_clientes_01_ma_tensor, calculos_modelos_clientes_01_ma_rindv, calculos_modelos_clientes_01_ma_loss, calculos_modelos_clientes_01_ma_nr = treinar_modelos_locais(modelo_global_federado_01_ma_tensor, avaliacoes_final_01_ma_tensor, criterion)
         print("treinar_modelos_locais :: modelos_clientes_02_mp_rindv_tensor")
-        avaliacoes_final_02_mp_rindv_tensor, modelos_clientes_02_mp_rindv_tensor, calculos_modelos_clientes_02_rindv, calculos_modelos_clientes_02_loss, calculos_modelos_clientes_02_nr = treinar_modelos_locais(modelo_global_federado_02_mp_rindv_tensor, avaliacoes_final_02_mp_rindv_tensor, criterion)
+        avaliacoes_final_02_mp_rindv_tensor, modelos_clientes_02_mp_rindv_tensor, calculos_modelos_clientes_02_mp_rindv_rindv, calculos_modelos_clientes_02_mp_rindv_loss, calculos_modelos_clientes_02_mp_rindv_nr = treinar_modelos_locais(modelo_global_federado_02_mp_rindv_tensor, avaliacoes_final_02_mp_rindv_tensor, criterion)
         print("treinar_modelos_locais :: modelos_clientes_03_mp_loss_tensor")
-        avaliacoes_final_03_mp_loss_tensor, modelos_clientes_03_mp_loss_tensor, calculos_modelos_clientes_03_rindv, calculos_modelos_clientes_03_loss, calculos_modelos_clientes_03_nr = treinar_modelos_locais(modelo_global_federado_03_mp_loss_tensor, avaliacoes_final_03_mp_loss_tensor, criterion)
+        avaliacoes_final_03_mp_loss_tensor, modelos_clientes_03_mp_loss_tensor, calculos_modelos_clientes_03_mp_loss_rindv, calculos_modelos_clientes_03_mp_loss_loss, calculos_modelos_clientes_03_mp_loss_nr = treinar_modelos_locais(modelo_global_federado_03_mp_loss_tensor, avaliacoes_final_03_mp_loss_tensor, criterion)
         print("treinar_modelos_locais :: modelos_clientes_04_mp_nr_tensor")
-        avaliacoes_final_04_mp_nr_tensor, modelos_clientes_04_mp_nr_tensor, calculos_modelos_clientes_04_rindv, calculos_modelos_clientes_04_loss, calculos_modelos_clientes_04_nr = treinar_modelos_locais(modelo_global_federado_04_mp_nr_tensor, avaliacoes_final_04_mp_nr_tensor, criterion)
+        avaliacoes_final_04_mp_nr_tensor, modelos_clientes_04_mp_nr_tensor, calculos_modelos_clientes_04_mp_nr_rindv, calculos_modelos_clientes_04_mp_nr_loss, calculos_modelos_clientes_04_mp_nr_nr = treinar_modelos_locais(modelo_global_federado_04_mp_nr_tensor, avaliacoes_final_04_mp_nr_tensor, criterion)
 
         print("treinar_modelos_locais :: modelos_clientes_05_ma_rindv_fairness_tensor")
-        avaliacoes_final_05_ma_fairness_tensor, modelos_clientes_05_ma_fairness_tensor, calculos_modelos_clientes_05_rindv_fairness, calculos_modelos_clientes_05_loss_fairness, calculos_modelos_clientes_05_nr_fairness = treinar_modelos_locais(modelo_global_federado_05_ma_fairness_tensor, avaliacoes_final_05_ma_fairness_tensor, criterion)
+        avaliacoes_final_05_ma_fairness_tensor, modelos_clientes_05_ma_fairness_tensor, calculos_modelos_clientes_05_ma_fairness_rindv, calculos_modelos_clientes_05_ma_fairness_loss, calculos_modelos_clientes_05_ma_fairness_nr = treinar_modelos_locais(modelo_global_federado_05_ma_fairness_tensor, avaliacoes_final_05_ma_fairness_tensor, criterion)
 
         # print("\nmodelos_clientes_rindv")
         # print(modelos_clientes_rindv)
@@ -339,11 +339,11 @@ def main():
         agregar_modelos_locais_ao_global_media_aritmetica_pesos(modelo_global_federado_01_ma_tensor, modelos_clientes_01_ma_tensor)
         # agregar_modelos_locais_ao_global_media_aritmetica_gradientes(modelo_global_federado1, modelos_clientes)
         print("agregar_modelos_locais_ao_global_media_poderada_pesos_rindv :: modelo_global_federado_02_mp_rindv_tensor")
-        agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(modelo_global_federado_02_mp_rindv_tensor, modelos_clientes_02_mp_rindv_tensor, calculos_modelos_clientes_02_rindv)
+        agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(modelo_global_federado_02_mp_rindv_tensor, modelos_clientes_02_mp_rindv_tensor, calculos_modelos_clientes_02_mp_rindv_rindv)
         print("agregar_modelos_locais_ao_global_media_poderada_pesos_loss :: modelo_global_federado_03_mp_loss_tensor")
-        agregar_modelos_locais_ao_global_media_poderada_pesos_loss(modelo_global_federado_03_mp_loss_tensor, modelos_clientes_03_mp_loss_tensor, calculos_modelos_clientes_03_loss)
+        agregar_modelos_locais_ao_global_media_poderada_pesos_loss(modelo_global_federado_03_mp_loss_tensor, modelos_clientes_03_mp_loss_tensor, calculos_modelos_clientes_03_mp_loss_loss)
         print("agregar_modelos_locais_ao_global_media_poderada_pesos_nr :: modelo_global_federado_04_mp_nr_tensor")
-        agregar_modelos_locais_ao_global_media_poderada_pesos_nr(modelo_global_federado_04_mp_nr_tensor, modelos_clientes_04_mp_nr_tensor, calculos_modelos_clientes_04_nr)
+        agregar_modelos_locais_ao_global_media_poderada_pesos_nr(modelo_global_federado_04_mp_nr_tensor, modelos_clientes_04_mp_nr_tensor, calculos_modelos_clientes_04_mp_nr_nr)
 
         print("agregar_modelos_locais_ao_global_media_aritmetica_pesos :: modelo_global_federado_05_ma_fairness_tensor")
         agregar_modelos_locais_ao_global_media_aritmetica_pesos(modelo_global_federado_05_ma_fairness_tensor, modelos_clientes_05_ma_fairness_tensor)
@@ -448,23 +448,35 @@ def main():
     # # G group: identifying the groups (NR: users grouped by number of ratings for available items)
     # # advantaged group: 5% users with the highest number of item ratings
     # # disadvantaged group: 95% users with the lowest number of item ratings
-    modelos_clientes_rindv_ordenados = sorted(calculos_modelos_clientes_02_rindv, key=lambda x: x[1], reverse=False)
+    modelos_clientes_rindv_ordenados = sorted(calculos_modelos_clientes_02_mp_rindv_rindv, key=lambda x: x[1], reverse=False)
     list_users_rindv = [i for i, _ in modelos_clientes_rindv_ordenados]
     advantaged_group_rindv = list_users_rindv[0:15]
     disadvantaged_group_rindv = list_users_rindv[15:300]
     G_RINDV = {1: advantaged_group_rindv, 2: disadvantaged_group_rindv}
 
-    modelos_clientes_loss_ordenados = sorted(calculos_modelos_clientes_03_loss, key=lambda x: x[1], reverse=False)
+    modelos_clientes_loss_ordenados = sorted(calculos_modelos_clientes_03_mp_loss_loss, key=lambda x: x[1], reverse=False)
     list_users_loss = [i for i, _ in modelos_clientes_loss_ordenados]
     advantaged_group_loss = list_users_loss[0:15]
     disadvantaged_group_loss = list_users_loss[15:300]
     G_LOSS = {1: advantaged_group_loss, 2: disadvantaged_group_loss}
     
-    modelos_clientes_nr_ordenados = sorted(calculos_modelos_clientes_04_nr, key=lambda x: x[1], reverse=True)
+    modelos_clientes_nr_ordenados = sorted(calculos_modelos_clientes_04_mp_nr_nr, key=lambda x: x[1], reverse=True)
     list_users_nr = [i for i, _ in modelos_clientes_nr_ordenados]
     advantaged_group_nr = list_users_nr[0:15]
     disadvantaged_group_nr = list_users_nr[15:300]
     G_NR = {1: advantaged_group_nr, 2: disadvantaged_group_nr}
+
+
+    # --------------- Criando as configurações de grupos para cada uma dos modelos
+    users_modelos_clientes_01_ma_rindv_ordenados = sorted(calculos_modelos_clientes_01_ma_rindv, key=lambda x: x[1], reverse=False)
+    list_users_01_ma_rindv = [i for i, _ in users_modelos_clientes_01_ma_rindv_ordenados]
+    advantaged_group_01_ma_rindv = list_users_01_ma_rindv[0:15]
+    disadvantaged_group_01_ma_rindv = list_users_01_ma_rindv[15:300]
+    G_01_MA_RINDV = {1: advantaged_group_01_ma_rindv, 2: disadvantaged_group_01_ma_rindv}
+
+    # Continuar configurando os grupos ...
+
+
 
     print("G_RINDV")
     print(G_RINDV[1])
