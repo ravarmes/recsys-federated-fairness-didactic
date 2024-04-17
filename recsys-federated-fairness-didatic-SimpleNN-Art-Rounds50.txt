@@ -476,3 +476,52 @@ RMSE Final [2 :: Média Ponderada Rindv] : 1.385645628
 RMSE Final [3 :: Média Ponderada Loss ] : 1.384881616
 RMSE Final [4 :: Média Ponderada NR   ] : 1.385698676
 RMSE Final [Não Federado              ] : 1.382271409
+
+
+
+-----------------------------------------------------------------------------
+NR_ADVANTAGED_GROUP = 5     # número de avaliações geradas para os clientes do grupo dos favorecidos
+NR_DISADVANTAGED_GROUP = 1  # número de avaliações geradas para os clientes do grupo dos desfavorecidos
+------------------------------------------------------------------------------
+ROUNDS: 25 | Melhores hiperparâmetros: {'learning_rate': 0.034, 'epochs': 100}
+
+
+=== MEDIDA DE JUSTIÇA ===
+
+Polarization Inicial (Rpol)                : 0.000000000
+Polarization Final   (Rpol [1])            : 1.121904135
+Polarization Final   (Rpol [2])            : 1.122982383
+Polarization Final   (Rpol [3])            : 1.124605536
+Polarization Final   (Rpol [4])            : 1.125934601
+Polarization Final   (Rpol [Não Federado]) : 1.132560492
+
+Individual Loss Variance (Rindv Inicial)                            : 0.218451843
+Individual Loss Variance (Rindv Final [1 :: Média Aritmética     ]) : 0.205416456
+Individual Loss Variance (Rindv Final [2 :: Média Ponderada Rindv]) : 0.204300106
+Individual Loss Variance (Rindv Final [3 :: Média Ponderada Loss ]) : 0.206731230
+Individual Loss Variance (Rindv Final [4 :: Média Ponderada NR   ]) : 0.205867842
+Individual Loss Variance (Rindv Final [Não Federado              ]) : 0.208789438
+G_RINDV
+[2, 0, 6, 7, 1, 5, 8, 14, 12, 3, 284, 35, 20, 13, 18]
+G_LOSS
+[9, 6, 4, 242, 0, 126, 227, 29, 114, 197, 2, 1, 174, 112, 239]
+G_NR
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+
+Group Loss Variance (Rgrp Inicial)                              : 0.000121799
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética Rindv ]) : 0.227245957
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética Loss  ]) : 0.052304417
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética NR    ]) : 0.216055885
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv  ]) : 0.208353609
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss   ]) : 0.042123314
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR     ]) : 0.195701182
+Group Loss Variance (Rgrp Final [Não Federado :: Rindv       ]) : 0.240283161
+Group Loss Variance (Rgrp Final [Não Federado :: Loss        ]) : 0.062061992
+Group Loss Variance (Rgrp Final [Não Federado :: NR          ]) : 0.229330391
+
+RMSE Inicial                            : 1.238960147
+RMSE Final [1 :: Média Aritmética     ] : 1.391065240
+RMSE Final [2 :: Média Ponderada Rindv] : 1.405270934
+RMSE Final [3 :: Média Ponderada Loss ] : 1.403122783
+RMSE Final [4 :: Média Ponderada NR   ] : 1.405446768
+RMSE Final [Não Federado              ] : 1.392555237

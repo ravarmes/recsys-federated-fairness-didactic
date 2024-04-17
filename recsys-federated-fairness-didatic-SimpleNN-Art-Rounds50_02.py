@@ -47,7 +47,7 @@ def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=
     modelos_clientes_loss = [] # perdas dos modelos locais de cada cliente local
     modelos_clientes_nr = [] # número de avaliações de cada cliente local
 
-    NR_ADVANTAGED_GROUP = 10      # número de avaliações geradas para os clientes do grupo dos favorecidos
+    NR_ADVANTAGED_GROUP = 5      # número de avaliações geradas para os clientes do grupo dos favorecidos
     NR_DISADVANTAGED_GROUP = 1  # número de avaliações geradas para os clientes do grupo dos desfavorecidos
 
     for i, modelo_cliente in enumerate(modelos_clientes):
