@@ -262,8 +262,8 @@ def main():
     # Exemplo de uso
     # num_usuarios = len(usuarios_ids_long)
     # num_itens = len(itens_ids_long)
-    embedding_size = 2
-    hidden_size = 5
+    embedding_size = 50
+    hidden_size = 64
 
     modelo_global_federado_01_ma_tensor = RecommendationNN(num_usuarios, num_itens, embedding_size, hidden_size)
     criterion = nn.MSELoss() 
