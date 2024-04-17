@@ -36,7 +36,7 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     dados = np.loadtxt(caminho_do_arquivo, delimiter=',', dtype=np.float32)
     return torch.tensor(dados), dados
     
-def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=1, learning_rate=0.1):
+def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=50, learning_rate=0.001):
     # optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
     optimizer = optim.Adam(modelo_global.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
     num_usuarios, num_itens = avaliacoes.shape
@@ -49,7 +49,7 @@ def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=1, learni
         loss.backward()
         optimizer.step()
 
-def treinar_modelos_locais(modelo_global, avaliacoes, criterion, epochs=1, learning_rate=0.1):
+def treinar_modelos_locais(modelo_global, avaliacoes, criterion, epochs=50, learning_rate=0.001):
     # Inicialização de dados e listas
     avaliacoes_final = avaliacoes.clone()
     modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes.size(0))] # criando uma cópia de modelo global inicial para cada usuário
@@ -315,7 +315,7 @@ def main():
     avaliacoes_final_11_mp_loss_naofederado_tensor = avaliacoes_inicial_tensor
     avaliacoes_final_12_mp_nr_naofederado_tensor = avaliacoes_inicial_tensor
     
-    for round in range(1):
+    for round in range(25):
         print(f"\n=== ROUND {round} ===")
 
         print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")
