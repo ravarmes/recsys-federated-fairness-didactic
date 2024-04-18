@@ -7,23 +7,17 @@ import pandas as pd
 from AlgorithmUserFairness import RMSE, Polarization, IndividualLossVariance, GroupLossVariance
 from AlgorithmImpartiality import AlgorithmImpartiality
 
-class RecommendationNN(nn.Module):
-    def __init__(self, num_users, num_items, embedding_size, hidden_size):
-        super(RecommendationNN, self).__init__()
-        self.user_embedding = nn.Embedding(num_users, embedding_size)
-        self.item_embedding = nn.Embedding(num_items, embedding_size)
-        self.fc1 = nn.Linear(2 * embedding_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, 1)
-        
-    def forward(self, user, item):
-        user_embedded = self.user_embedding(user)
-        item_embedded = self.item_embedding(item)
-        x = torch.cat((user_embedded, item_embedded), dim=1)
-        x = torch.relu(self.fc1(x))
-        x = torch.sigmoid(self.fc2(x))  # Usando sigmoid para garantir valores entre 0 e 1
-        # Transformando os valores para o intervalo desejado (1 a 5)
-        x = 4 * x + 1
-        return x.view(-1)
+class SimpleNN(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super().__init__()
+        self.layer1 = nn.Linear(input_size, hidden_size)
+        self.layer2 = nn.Linear(hidden_size, output_size)
+        self.activation = nn.Sigmoid()
+
+    def forward(self, x):
+        x = torch.relu(self.layer1(x))
+        x = self.activation(self.layer2(x)) * 4 + 1  # Scale sigmoid output to range [1, 5]
+        return x
 
 def carregar_avaliacoes_do_arquivo_xls(caminho_do_arquivo):
     df = pd.read_excel(caminho_do_arquivo) # Carregar os dados do arquivo Excel para um DataFrame do pandas
@@ -36,16 +30,14 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     dados = np.loadtxt(caminho_do_arquivo, delimiter=',', dtype=np.float32)
     return torch.tensor(dados), dados
     
-def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=1, learning_rate=0.5):
-    optimizer = optim.SGD(modelo_global.parameters(), lr=learning_rate, momentum=0.9)
-    # optimizer = optim.Adam(modelo_global.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
-    num_usuarios, num_itens = avaliacoes.shape
-    usuarios_ids, itens_ids = torch.meshgrid(torch.arange(num_usuarios), torch.arange(num_itens), indexing='ij')
-    usuarios_ids, itens_ids = usuarios_ids.flatten(), itens_ids.flatten()
+def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=1, learning_rate=0.5):
+    # optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(modelo.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
+    modelo.train()
     for epoch in range(epochs):
         optimizer.zero_grad()
-        predictions = modelo_global(usuarios_ids.long(), itens_ids.long()).view(num_usuarios, num_itens)
-        loss = criterion(predictions, avaliacoes.float())
+        output = modelo(avaliacoes)
+        loss = criterion(output, avaliacoes)
         loss.backward()
         optimizer.step()
 
@@ -59,10 +51,6 @@ def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=1, le
     NR_ADVANTAGED_GROUP = 5
     NR_DISADVANTAGED_GROUP = 1
 
-    num_usuarios, num_itens = avaliacoes.shape
-    usuarios_ids, itens_ids = torch.meshgrid(torch.arange(num_usuarios), torch.arange(num_itens), indexing='ij')
-    usuarios_ids, itens_ids = usuarios_ids.flatten().long(), itens_ids.flatten().long()
-
     for i, modelo_cliente in enumerate(modelos_clientes):
         # print(f"=== Treinamento no Cliente {i + 1} ===")
         indices_nao_avaliados = (avaliacoes[i] == 0).nonzero(as_tuple=False).squeeze()
@@ -72,21 +60,27 @@ def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=1, le
         novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP,)).float()
         modelos_clientes_nr.append((i, NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP))
 
-        avaliacoes_final[i, indices_novas_avaliacoes] = novas_avaliacoes
-        avaliacoes_final_cliente = avaliacoes.clone()
-        avaliacoes_final_cliente[i, indices_novas_avaliacoes] = novas_avaliacoes
+        # Atualizar avaliações iniciais com novas avaliações
+        avaliacoes_final[i][indices_novas_avaliacoes] = novas_avaliacoes
+        avaliacoes_final_cliente = avaliacoes.clone()  # Usar clone para manter as avaliações iniciais
+        avaliacoes_final_cliente[i][indices_novas_avaliacoes] = novas_avaliacoes
 
-        optimizer_cliente = optim.SGD(modelo_cliente.parameters(), lr=learning_rate, momentum=0.9)
-        # optimizer_cliente = optim.Adam(modelo_cliente.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
-        for epoch in range(epochs):
+        # print(f"=== Treinamento no Cliente {i + 1} ===")
+
+        # modelo_cliente_local = copy.deepcopy(modelo_cliente)  # Clonando o modelo_cliente para um novo objeto
+        # optimizer_cliente = optim.SGD(modelo_cliente.parameters(), lr=learning_rate)
+        optimizer_cliente = optim.Adam(modelo_cliente.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
+        modelo_cliente.train()
+
+        for _ in range(epochs):
             optimizer_cliente.zero_grad()
-            predictions = modelo_cliente(usuarios_ids, itens_ids).view(num_usuarios, num_itens).float()
-            loss_cliente = criterion(predictions, avaliacoes_final_cliente)
+            output_cliente = modelo_cliente(avaliacoes_final_cliente)
+            loss_cliente = criterion(output_cliente, avaliacoes_final_cliente)
             loss_cliente.backward()
             optimizer_cliente.step()
 
         with torch.no_grad():
-            recomendacoes_cliente = modelo_cliente(usuarios_ids, itens_ids).view(num_usuarios, num_itens)
+            recomendacoes_cliente = modelo_cliente(avaliacoes_final_cliente)
 
         # Calculando as perdas individuais (lis) dos clientes em cada modelo de cliente
         avaliacoes_final_cliente_np = avaliacoes_final_cliente.numpy()
@@ -101,6 +95,7 @@ def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=1, le
         modelos_clientes_rindv.append((i, lis_cliente[i])) # injustiças individuais do cliente local em seu respectivo modelo local
         modelos_clientes_loss.append((i, loss_cliente.item())) # perdas dos modelos locais
 
+    # Retorna ambos: avaliações finais, avaliações finais por cliente, modelos dos clientes e perdas dos modelos (baseado na injustiça individual li)
     return avaliacoes_final, modelos_clientes, modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr
 
 def agregar_modelos_locais_ao_global_media_aritmetica_pesos(modelo_global, modelos_clientes):
@@ -224,7 +219,7 @@ def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global
     usuarios_ids, itens_ids = torch.meshgrid(torch.arange(num_usuarios), torch.arange(num_itens), indexing='ij')
     usuarios_ids, itens_ids = usuarios_ids.flatten(), itens_ids.flatten()
     with torch.no_grad():
-        recomendacoes_tensor = modelo_global(usuarios_ids.long(), itens_ids.long()).view(num_usuarios, num_itens)
+        recomendacoes_tensor = modelo_global(avaliacoes)
 
     recomendacoes_np = recomendacoes_tensor.numpy()
     recomendacoes_df = pd.DataFrame(recomendacoes_np)
@@ -247,28 +242,16 @@ def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global
 
 def main():
     print("\n=== SERVIDOR (ETAPA DE TREINAMENTO INICIAL) ===")
+
     caminho_do_arquivo = 'X_MovieLens-1M.xlsx'
     avaliacoes_inicial_tensor, avaliacoes_inicial_df = carregar_avaliacoes_do_arquivo_xls(caminho_do_arquivo)
 
-    with torch.no_grad():
-        # Preparar os índices de usuários e itens
-        num_usuarios, num_itens = avaliacoes_inicial_tensor.shape
-        usuarios_ids, itens_ids = torch.meshgrid(torch.arange(num_usuarios), torch.arange(num_itens), indexing='ij')
-        usuarios_ids = usuarios_ids.reshape(-1)
-        itens_ids = itens_ids.reshape(-1)
+    numero_de_usuarios = avaliacoes_inicial_tensor.shape[0]
+    numero_de_itens = avaliacoes_inicial_tensor.shape[1]
 
-        # Assegurando que os índices sejam inteiros longos para compatibilidade com embedding layers
-        usuarios_ids_long = usuarios_ids.long()
-        itens_ids_long = itens_ids.long()
-
-    # Exemplo de uso
-    # num_usuarios = len(usuarios_ids_long)
-    # num_itens = len(itens_ids_long)
-    embedding_size = 10
-    hidden_size = 16
-
-    modelo_global_federado_01_ma_rindv_tensor = RecommendationNN(num_usuarios, num_itens, embedding_size, hidden_size)
-    criterion = nn.MSELoss() 
+    # modelo_global_federado_01_ma_rindv_tensor = SimpleNN(numero_de_itens, 2, numero_de_itens)
+    modelo_global_federado_01_ma_rindv_tensor = SimpleNN(numero_de_itens, 20, numero_de_itens)
+    criterion = nn.MSELoss()
 
     # Realizando cópias do modelo global para cada uma das situações a serem analisadas
     treinar_modelo_global(modelo_global_federado_01_ma_rindv_tensor, avaliacoes_inicial_tensor, criterion)
@@ -295,15 +278,7 @@ def main():
 
 
     with torch.no_grad():
-        recomendacoes_inicial_01_ma_tensor = modelo_global_federado_01_ma_rindv_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        # recomendacoes_inicial_02_mp_rindv_tensor = modelo_global_federado_02_mp_rindv_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        # recomendacoes_inicial_03_mp_loss_tensor = modelo_global_federado_03_mp_loss_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        # recomendacoes_inicial_04_mp_nr_tensor = modelo_global_federado_04_mp_nr_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-
-        # recomendacoes_inicial_05_ma_rindv_fairness_tensor = modelo_global_federado_05_ma_rindv_fairness_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        # recomendacoes_inicial_06_mp_rindv_fairness_tensor = modelo_global_federado_06_mp_rindv_fairness_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        # recomendacoes_inicial_07_mp_loss_fairness_tensor = modelo_global_federado_07_mp_loss_fairness_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        # recomendacoes_inicial_08_mp_nr_fairness_tensor = modelo_global_federado_08_mp_nr_fairness_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        recomendacoes_inicial_01_ma_tensor = modelo_global_federado_01_ma_rindv_tensor(avaliacoes_inicial_tensor)
 
     avaliacoes_final_01_ma_rindv_tensor = avaliacoes_inicial_tensor
     avaliacoes_final_01_ma_loss_tensor = avaliacoes_inicial_tensor
@@ -483,18 +458,18 @@ def main():
 
 
     with torch.no_grad():
-        recomendacoes_final_01_ma_rindv_tensor = modelo_global_federado_01_ma_rindv_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_final_01_ma_loss_tensor = modelo_global_federado_01_ma_loss_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_final_01_ma_nr_tensor = modelo_global_federado_01_ma_nr_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_final_02_mp_rindv_tensor = modelo_global_federado_02_mp_rindv_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_final_03_mp_loss_tensor = modelo_global_federado_03_mp_loss_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_final_04_mp_nr_tensor = modelo_global_federado_04_mp_nr_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_final_05_ma_rindv_fairness_tensor = modelo_global_federado_05_ma_rindv_fairness_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_final_05_ma_loss_fairness_tensor = modelo_global_federado_05_ma_loss_fairness_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_final_05_ma_nr_fairness_tensor = modelo_global_federado_05_ma_nr_fairness_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_final_09_naofederado_rindv_tensor = modelo_global_naofederado_09_rindv_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_final_09_naofederado_loss_tensor = modelo_global_naofederado_09_loss_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
-        recomendacoes_final_09_naofederado_nr_tensor = modelo_global_naofederado_09_nr_tensor(usuarios_ids_long, itens_ids_long).view(num_usuarios, num_itens)
+        recomendacoes_final_01_ma_rindv_tensor = modelo_global_federado_01_ma_rindv_tensor(avaliacoes_final_01_ma_rindv_tensor)
+        recomendacoes_final_01_ma_loss_tensor = modelo_global_federado_01_ma_loss_tensor(avaliacoes_final_01_ma_loss_tensor)
+        recomendacoes_final_01_ma_nr_tensor = modelo_global_federado_01_ma_nr_tensor(avaliacoes_final_01_ma_nr_tensor)
+        recomendacoes_final_02_mp_rindv_tensor = modelo_global_federado_02_mp_rindv_tensor(avaliacoes_final_02_mp_rindv_tensor)
+        recomendacoes_final_03_mp_loss_tensor = modelo_global_federado_03_mp_loss_tensor(avaliacoes_final_03_mp_loss_tensor)
+        recomendacoes_final_04_mp_nr_tensor = modelo_global_federado_04_mp_nr_tensor(avaliacoes_final_04_mp_nr_tensor)
+        recomendacoes_final_05_ma_rindv_fairness_tensor = modelo_global_federado_05_ma_rindv_fairness_tensor(avaliacoes_final_05_ma_rindv_fairness_tensor)
+        recomendacoes_final_05_ma_loss_fairness_tensor = modelo_global_federado_05_ma_loss_fairness_tensor(avaliacoes_final_05_ma_loss_fairness_tensor)
+        recomendacoes_final_05_ma_nr_fairness_tensor = modelo_global_federado_05_ma_nr_fairness_tensor(avaliacoes_final_05_ma_nr_fairness_tensor)
+        recomendacoes_final_09_naofederado_rindv_tensor = modelo_global_naofederado_09_rindv_tensor(avaliacoes_final_09_naofederado_rindv_tensor)
+        recomendacoes_final_09_naofederado_loss_tensor = modelo_global_naofederado_09_loss_tensor(avaliacoes_final_09_naofederado_loss_tensor)
+        recomendacoes_final_09_naofederado_nr_tensor = modelo_global_naofederado_09_nr_tensor(avaliacoes_final_09_naofederado_nr_tensor)
     
     print("\n=== MEDIDA DE JUSTIÇA ===")
     avaliacoes_inicial_np = avaliacoes_inicial_tensor.numpy()

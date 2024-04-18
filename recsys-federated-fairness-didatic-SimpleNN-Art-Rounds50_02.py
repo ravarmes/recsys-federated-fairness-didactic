@@ -55,9 +55,7 @@ def treinar_modelos_locais(modelo_global, avaliacoes_inicial, criterion, epochs=
         indices_nao_avaliados = (avaliacoes_inicial[i] == 0).nonzero().squeeze()
         
         if i < 15:
-            # Selecionar NR_ADVANTAGED_GROUP índices aleatórios para novas avaliações
             indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP]]
-            # Gerar NR_ADVANTAGED_GROUP novas avaliações aleatórias
             novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP,)).float()
             modelos_clientes_nr.append((i, NR_ADVANTAGED_GROUP))
 
