@@ -280,24 +280,24 @@ def main():
     with torch.no_grad():
         recomendacoes_inicial_01_ma_tensor = modelo_global_federado_01_ma_rindv_tensor(avaliacoes_inicial_tensor)
 
-    avaliacoes_final_01_ma_rindv_tensor = avaliacoes_inicial_tensor
-    avaliacoes_final_01_ma_loss_tensor = avaliacoes_inicial_tensor
-    avaliacoes_final_01_ma_nr_tensor = avaliacoes_inicial_tensor
+    avaliacoes_final_01_ma_rindv_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
+    avaliacoes_final_01_ma_loss_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
+    avaliacoes_final_01_ma_nr_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
 
-    avaliacoes_final_02_mp_rindv_tensor = avaliacoes_inicial_tensor
-    avaliacoes_final_03_mp_loss_tensor = avaliacoes_inicial_tensor
-    avaliacoes_final_04_mp_nr_tensor = avaliacoes_inicial_tensor
+    avaliacoes_final_02_mp_rindv_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
+    avaliacoes_final_03_mp_loss_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
+    avaliacoes_final_04_mp_nr_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
 
-    avaliacoes_final_05_ma_rindv_fairness_tensor = avaliacoes_inicial_tensor
-    avaliacoes_final_05_ma_loss_fairness_tensor = avaliacoes_inicial_tensor
-    avaliacoes_final_05_ma_nr_fairness_tensor = avaliacoes_inicial_tensor
-    avaliacoes_final_06_mp_rindv_fairness_tensor = avaliacoes_inicial_tensor
-    avaliacoes_final_07_mp_loss_fairness_tensor = avaliacoes_inicial_tensor
-    avaliacoes_final_08_mp_nr_fairness_tensor = avaliacoes_inicial_tensor
+    avaliacoes_final_05_ma_rindv_fairness_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
+    avaliacoes_final_05_ma_loss_fairness_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
+    avaliacoes_final_05_ma_nr_fairness_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
+    avaliacoes_final_06_mp_rindv_fairness_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
+    avaliacoes_final_07_mp_loss_fairness_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
+    avaliacoes_final_08_mp_nr_fairness_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
 
-    avaliacoes_final_09_naofederado_rindv_tensor = avaliacoes_inicial_tensor
-    avaliacoes_final_09_naofederado_loss_tensor = avaliacoes_inicial_tensor
-    avaliacoes_final_09_naofederado_nr_tensor = avaliacoes_inicial_tensor
+    avaliacoes_final_09_naofederado_rindv_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
+    avaliacoes_final_09_naofederado_loss_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
+    avaliacoes_final_09_naofederado_nr_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
     # avaliacoes_final_10_mp_rindv_naofederado_tensor = avaliacoes_inicial_tensor
     # avaliacoes_final_11_mp_loss_naofederado_tensor = avaliacoes_inicial_tensor
     # avaliacoes_final_12_mp_nr_naofederado_tensor = avaliacoes_inicial_tensor
@@ -705,6 +705,12 @@ def main():
     print("G_01_MA_RINDV")
     print(G_01_MA_RINDV[1])
 
+    print("G_01_MA_LOSS")
+    print(G_01_MA_LOSS[1])
+
+    print("G_01_MA_NR")
+    print(G_01_MA_NR[1])
+
     print("G_02_MP_RINDV")
     print(G_02_MP_RINDV[1])
 
@@ -734,30 +740,30 @@ def main():
 
     glv_inicial = GroupLossVariance(avaliacoes_inicial_df, omega_inicial, G_01_MA_RINDV, 1) #axis = 1 (0 rows e 1 columns)
     glv_final_01_ma_rindv = GroupLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final_01_ma_rindv, G_01_MA_RINDV, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final_01_ma_loss = GroupLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final_01_ma_rindv, G_01_MA_LOSS, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final_01_ma_nr = GroupLossVariance(avaliacoes_final_01_ma_rindv_df, omega_final_01_ma_rindv, G_01_MA_NR, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final_01_ma_loss = GroupLossVariance(avaliacoes_final_01_ma_loss_df, omega_final_01_ma_loss, G_01_MA_LOSS, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final_01_ma_nr = GroupLossVariance(avaliacoes_final_01_ma_nr_df, omega_final_01_ma_nr, G_01_MA_NR, 1) #axis = 1 (0 rows e 1 columns)
     glv_final_02_mp_rindv = GroupLossVariance(avaliacoes_final_02_mp_rindv_df, omega_final_02_mp_rindv, G_02_MP_RINDV, 1) #axis = 1 (0 rows e 1 columns)
     glv_final_03_mp_loss = GroupLossVariance(avaliacoes_final_03_mp_loss_df, omega_final_03_mp_loss, G_03_MP_LOSS, 1) #axis = 1 (0 rows e 1 columns)
     glv_final_04_mp_nr = GroupLossVariance(avaliacoes_final_04_mp_nr_df, omega_final_04_mp_nr, G_04_MP_NR, 1) #axis = 1 (0 rows e 1 columns)
     glv_final_05_ma_fairness_rindv = GroupLossVariance(avaliacoes_final_05_ma_rindv_fairness_df, omega_final_05_ma_rindv_fairness, G_05_MA_RINDV, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final_05_ma_fairness_loss = GroupLossVariance(avaliacoes_final_05_ma_rindv_fairness_df, omega_final_05_ma_rindv_fairness, G_05_MA_LOSS, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final_05_ma_fairness_nr = GroupLossVariance(avaliacoes_final_05_ma_rindv_fairness_df, omega_final_05_ma_rindv_fairness, G_05_MA_NR, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final_09_naofederado_rindv = GroupLossVariance(avaliacoes_final_09_naofederado_rindv_df, omega_final_09_naofederado_rindv, G_01_MA_RINDV, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final_09_naofederado_loss = GroupLossVariance(avaliacoes_final_09_naofederado_rindv_df, omega_final_09_naofederado_rindv, G_01_MA_LOSS, 1) #axis = 1 (0 rows e 1 columns)
-    glv_final_09_naofederado_nr = GroupLossVariance(avaliacoes_final_09_naofederado_rindv_df, omega_final_09_naofederado_rindv, G_01_MA_NR, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final_05_ma_fairness_loss = GroupLossVariance(avaliacoes_final_05_ma_loss_fairness_df, omega_final_05_ma_loss_fairness, G_05_MA_LOSS, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final_05_ma_fairness_nr = GroupLossVariance(avaliacoes_final_05_ma_nr_fairness_df, omega_final_05_ma_nr_fairness, G_05_MA_NR, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final_09_naofederado_rindv = GroupLossVariance(avaliacoes_final_09_naofederado_rindv_df, omega_final_09_naofederado_rindv, G_09_NAOFEDER_RINDV, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final_09_naofederado_loss = GroupLossVariance(avaliacoes_final_09_naofederado_loss_df, omega_final_09_naofederado_loss, G_09_NAOFEDER_LOSS, 1) #axis = 1 (0 rows e 1 columns)
+    glv_final_09_naofederado_nr = GroupLossVariance(avaliacoes_final_09_naofederado_nr_df, omega_final_09_naofederado_nr, G_09_NAOFEDER_NR, 1) #axis = 1 (0 rows e 1 columns)
     RgrpNR_inicial = glv_inicial.evaluate(recomendacoes_inicial_01_ma_df)
     RgrpNR_final_01_ma_rindv = glv_final_01_ma_rindv.evaluate(recomendacoes_final_01_ma_rindv_df)
-    RgrpNR_final_01_ma_loss = glv_final_01_ma_loss.evaluate(recomendacoes_final_01_ma_rindv_df)
-    RgrpNR_final_01_ma_nr = glv_final_01_ma_nr.evaluate(recomendacoes_final_01_ma_rindv_df)
+    RgrpNR_final_01_ma_loss = glv_final_01_ma_loss.evaluate(recomendacoes_final_01_ma_loss_df)
+    RgrpNR_final_01_ma_nr = glv_final_01_ma_nr.evaluate(recomendacoes_final_01_ma_nr_df)
     RgrpNR_final_02_mp_rindv = glv_final_02_mp_rindv.evaluate(recomendacoes_final_02_mp_rindv_df)
     RgrpNR_final_03_mp_loss = glv_final_03_mp_loss.evaluate(recomendacoes_final_03_mp_loss_df)
     RgrpNR_final_04_mp_nr = glv_final_04_mp_nr.evaluate(recomendacoes_final_04_mp_nr_df)
     RgrpNR_final_05_ma_fairness_rindv = glv_final_05_ma_fairness_rindv.evaluate(recomendacoes_final_05_ma_rindv_fairness_df)
-    RgrpNR_final_05_ma_fairness_loss = glv_final_05_ma_fairness_loss.evaluate(recomendacoes_final_05_ma_rindv_fairness_df)
-    RgrpNR_final_05_ma_fairness_nr = glv_final_05_ma_fairness_nr.evaluate(recomendacoes_final_05_ma_rindv_fairness_df)
+    RgrpNR_final_05_ma_fairness_loss = glv_final_05_ma_fairness_loss.evaluate(recomendacoes_final_05_ma_loss_fairness_df)
+    RgrpNR_final_05_ma_fairness_nr = glv_final_05_ma_fairness_nr.evaluate(recomendacoes_final_05_ma_nr_fairness_df)
     RgrpNR_final_09_naofederado_rindv = glv_final_09_naofederado_rindv.evaluate(recomendacoes_final_09_naofederado_rindv_df)
-    RgrpNR_final_09_naofederado_loss = glv_final_09_naofederado_loss.evaluate(recomendacoes_final_09_naofederado_rindv_df)
-    RgrpNR_final_09_naofederado_nr = glv_final_09_naofederado_nr.evaluate(recomendacoes_final_09_naofederado_rindv_df)
+    RgrpNR_final_09_naofederado_loss = glv_final_09_naofederado_loss.evaluate(recomendacoes_final_09_naofederado_loss_df)
+    RgrpNR_final_09_naofederado_nr = glv_final_09_naofederado_nr.evaluate(recomendacoes_final_09_naofederado_nr_df)
     print(f"\nGroup Loss Variance (Rgrp Inicial)                                      : {RgrpNR_inicial:.9f}")
     print(f"Group Loss Variance (Rgrp Final [1 :: Média Aritmética Rindv         ]) : {RgrpNR_final_01_ma_rindv:.9f}")
     print(f"Group Loss Variance (Rgrp Final [1 :: Média Aritmética Loss          ]) : {RgrpNR_final_01_ma_loss:.9f}")
