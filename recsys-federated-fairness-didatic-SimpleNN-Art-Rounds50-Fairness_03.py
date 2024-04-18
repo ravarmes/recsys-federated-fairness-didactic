@@ -55,8 +55,8 @@ def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=100, 
         # print(f"=== Treinamento no Cliente {i + 1} ===")
         indices_nao_avaliados = (avaliacoes[i] == 0).nonzero(as_tuple=False).squeeze()
 
-        # indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
-        indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP]]
+        indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
+        # indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP]]
         novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP,)).float()
         modelos_clientes_nr.append((i, NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP))
 
@@ -318,7 +318,7 @@ def main():
     G_09_NAOFEDER_LOSS = G.copy()
     G_09_NAOFEDER_NR = G.copy()
 
-    for round in range(1):
+    for round in range(5):
         print(f"\n=== ROUND {round} ===")
 
         print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")
@@ -798,8 +798,12 @@ def main():
     result_final_05_ma_fairness_loss = rmse_final_05_ma_fairness_loss.evaluate(recomendacoes_final_01_ma_loss_df)
     rmse_final_05_ma_fairness_nr = RMSE(avaliacoes_final_05_ma_nr_fairness_df, omega_final_05_ma_nr_fairness)
     result_final_05_ma_fairness_nr = rmse_final_05_ma_fairness_nr.evaluate(recomendacoes_final_01_ma_nr_df)
-    rmse_final_09_naofederado = RMSE(avaliacoes_final_01_ma_rindv_df, omega_final_01_ma_rindv)
-    result_final_09_naofederado = rmse_final_09_naofederado.evaluate(recomendacoes_final_09_naofederado_rindv_df)
+    rmse_final_09_naofederado_rindv = RMSE(avaliacoes_final_01_ma_rindv_df, omega_final_01_ma_rindv)
+    result_final_09_naofederado_rindv = rmse_final_09_naofederado_rindv.evaluate(recomendacoes_final_09_naofederado_rindv_df)
+    rmse_final_09_naofederado_loss = RMSE(avaliacoes_final_01_ma_loss_df, omega_final_01_ma_loss)
+    result_final_09_naofederado_loss = rmse_final_09_naofederado_loss.evaluate(recomendacoes_final_09_naofederado_loss_df)
+    rmse_final_09_naofederado_nr = RMSE(avaliacoes_final_01_ma_nr_df, omega_final_01_ma_nr)
+    result_final_09_naofederado_nr = rmse_final_09_naofederado_nr.evaluate(recomendacoes_final_09_naofederado_nr_df)
     print(f'\nRMSE Inicial                                      : {result_inicial:.9f}')
     print(f'RMSE Final [1 :: Média Aritmética Rindv         ] : {result_final_01_ma_rindv:.9f}')
     print(f'RMSE Final [1 :: Média Aritmética Loss          ] : {result_final_01_ma_loss:.9f}')
@@ -810,7 +814,9 @@ def main():
     print(f'RMSE Final [5 :: Média Aritmética Fairness Rindv] : {result_final_05_ma_fairness_rindv:.9f}')
     print(f'RMSE Final [5 :: Média Aritmética Fairness Loss ] : {result_final_05_ma_fairness_loss:.9f}')
     print(f'RMSE Final [5 :: Média Aritmética Fairness NR   ] : {result_final_05_ma_fairness_nr:.9f}')
-    print(f'RMSE Final [Não Federado                        ] : {result_final_09_naofederado:.9f}')
+    print(f'RMSE Final [9 :: Não Federado :: Rindv          ] : {result_final_09_naofederado_rindv:.9f}')
+    print(f'RMSE Final [9 :: Não Federado :: Loss           ] : {result_final_09_naofederado_loss:.9f}')
+    print(f'RMSE Final [9 :: Não Federado :: NR             ] : {result_final_09_naofederado_nr:.9f}')
 
     # avaliacoes_inicial_df.to_excel("avaliacoes_inicial.xlsx", index=False)
     # avaliacoes_final_df.to_excel("avaliacoes_final.xlsx", index=False)
