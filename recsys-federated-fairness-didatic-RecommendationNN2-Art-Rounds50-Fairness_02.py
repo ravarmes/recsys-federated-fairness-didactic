@@ -36,7 +36,7 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     dados = np.loadtxt(caminho_do_arquivo, delimiter=',', dtype=np.float32)
     return torch.tensor(dados), dados
     
-def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=10, learning_rate=0.1):
+def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=1, learning_rate=0.5):
     optimizer = optim.SGD(modelo_global.parameters(), lr=learning_rate, momentum=0.9)
     # optimizer = optim.Adam(modelo_global.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
     num_usuarios, num_itens = avaliacoes.shape
@@ -49,14 +49,14 @@ def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=10, learn
         loss.backward()
         optimizer.step()
 
-def treinar_modelos_locais(modelo_global, avaliacoes, criterion, epochs=10, learning_rate=0.1):
+def treinar_modelos_locais(modelo_global, avaliacoes, criterion, epochs=1, learning_rate=0.5):
     # Inicialização de dados e listas
     avaliacoes_final = avaliacoes.clone()
     modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes.size(0))] # criando uma cópia de modelo global inicial para cada usuário
     modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr = [], [], []
     
     NUMBER_ADVANTAGED_GROUP = 15
-    NR_ADVANTAGED_GROUP = 4
+    NR_ADVANTAGED_GROUP = 5
     NR_DISADVANTAGED_GROUP = 1
 
     num_usuarios, num_itens = avaliacoes.shape
@@ -68,6 +68,60 @@ def treinar_modelos_locais(modelo_global, avaliacoes, criterion, epochs=10, lear
         indices_nao_avaliados = (avaliacoes[i] == 0).nonzero(as_tuple=False).squeeze()
 
         indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
+        novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP,)).float()
+        modelos_clientes_nr.append((i, NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP))
+
+        avaliacoes_final[i, indices_novas_avaliacoes] = novas_avaliacoes
+        avaliacoes_final_cliente = avaliacoes.clone()
+        avaliacoes_final_cliente[i, indices_novas_avaliacoes] = novas_avaliacoes
+
+        optimizer_cliente = optim.SGD(modelo_cliente.parameters(), lr=learning_rate, momentum=0.9)
+        # optimizer_cliente = optim.Adam(modelo_cliente.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
+        for epoch in range(epochs):
+            optimizer_cliente.zero_grad()
+            predictions = modelo_cliente(usuarios_ids, itens_ids).view(num_usuarios, num_itens).float()
+            loss_cliente = criterion(predictions, avaliacoes_final_cliente)
+            loss_cliente.backward()
+            optimizer_cliente.step()
+
+        with torch.no_grad():
+            recomendacoes_cliente = modelo_cliente(usuarios_ids, itens_ids).view(num_usuarios, num_itens)
+
+        # Calculando as perdas individuais (lis) dos clientes em cada modelo de cliente
+        avaliacoes_final_cliente_np = avaliacoes_final_cliente.numpy()
+        avaliacoes_final_cliente_df = pd.DataFrame(avaliacoes_final_cliente_np)
+        recomendacoes_cliente_np = recomendacoes_cliente.numpy()
+        recomendacoes_cliente_df = pd.DataFrame(recomendacoes_cliente_np)
+        omega_avaliacoes_final_cliente_df = (avaliacoes_final_cliente_df != 0)
+
+        ilv_cliente = IndividualLossVariance(avaliacoes_final_cliente_df, omega_avaliacoes_final_cliente_df, 1)
+        lis_cliente = ilv_cliente.get_losses(recomendacoes_cliente_df)
+
+        modelos_clientes_rindv.append((i, lis_cliente[i])) # injustiças individuais do cliente local em seu respectivo modelo local
+        modelos_clientes_loss.append((i, loss_cliente.item())) # perdas dos modelos locais
+
+    return avaliacoes_final, modelos_clientes, modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr
+
+def treinar_modelos_locais2(modelo_global, avaliacoes, criterion, epochs=1, learning_rate=0.5, G = {1:list(range(0, 15)), 2:list(range(15, 300))}):
+    # Inicialização de dados e listas
+    avaliacoes_final = avaliacoes.clone()
+    modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes.size(0))] # criando uma cópia de modelo global inicial para cada usuário
+    modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr = [], [], []
+    
+    NUMBER_ADVANTAGED_GROUP = 15
+    NR_ADVANTAGED_GROUP = 5
+    NR_DISADVANTAGED_GROUP = 1
+
+    num_usuarios, num_itens = avaliacoes.shape
+    usuarios_ids, itens_ids = torch.meshgrid(torch.arange(num_usuarios), torch.arange(num_itens), indexing='ij')
+    usuarios_ids, itens_ids = usuarios_ids.flatten().long(), itens_ids.flatten().long()
+
+    for i, modelo_cliente in enumerate(modelos_clientes):
+        # print(f"=== Treinamento no Cliente {i + 1} ===")
+        indices_nao_avaliados = (avaliacoes[i] == 0).nonzero(as_tuple=False).squeeze()
+
+        # indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
+        indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP]]
         novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP,)).float()
         modelos_clientes_nr.append((i, NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP))
 
@@ -315,8 +369,8 @@ def main():
     # avaliacoes_final_10_mp_rindv_naofederado_tensor = avaliacoes_inicial_tensor
     # avaliacoes_final_11_mp_loss_naofederado_tensor = avaliacoes_inicial_tensor
     # avaliacoes_final_12_mp_nr_naofederado_tensor = avaliacoes_inicial_tensor
-    
-    for round in range(5):
+
+    for round in range(1):
         print(f"\n=== ROUND {round} ===")
 
         print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")
@@ -337,12 +391,6 @@ def main():
         print("treinar_modelos_locais :: modelos_clientes_05_ma_rindv_fairness_tensor")
         avaliacoes_final_05_ma_nr_fairness_tensor, modelos_clientes_05_ma_nr_fairness_tensor, calculos_modelos_clientes_05_ma_rindv_fairness_nr, calculos_modelos_clientes_05_ma_loss_fairness_nr, calculos_modelos_clientes_05_ma_nr_fairness_nr = treinar_modelos_locais(modelo_global_federado_05_ma_nr_fairness_tensor, avaliacoes_final_05_ma_nr_fairness_tensor, criterion)
 
-        # print("\nmodelos_clientes_rindv")
-        # print(modelos_clientes_rindv)
-        # print("\nmodelos_clientes_loss")
-        # print(modelos_clientes_loss)
-        # print("\nmodelos_clientes_nr")
-        # print(modelos_clientes_nr)
 
         print("\n=== SERVIDOR (ETAPA DE TREINAMENTO FINAL - AGREGAÇÃO) ===")
         print("agregar_modelos_locais_ao_global_media_aritmetica_pesos :: modelo_global_federado_01_ma_tensor")

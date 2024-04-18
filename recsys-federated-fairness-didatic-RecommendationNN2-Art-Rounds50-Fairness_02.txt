@@ -59,6 +59,17 @@ RMSE Final [Não Federado                  ] : 2.056127548
 
 
 ---------------------------------------------------------
+ARQUITETURA DA REDE NEURAL
+embedding_size = 10
+hidden_size = 16
+
+ROUNDS: 25
+
+CRITÉRIOS DE TREINAMENTO
 criterion, epochs=10, learning_rate=0.1
 optimizer = optim.SGD(modelo_global.parameters(), lr=learning_rate, momentum=0.9)
+
+NUMBER_ADVANTAGED_GROUP = 15
+NR_ADVANTAGED_GROUP = 5
+NR_DISADVANTAGED_GROUP = 1
 
