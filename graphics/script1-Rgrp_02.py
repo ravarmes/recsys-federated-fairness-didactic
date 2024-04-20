@@ -17,9 +17,9 @@ valores = [
 ]
 
 cores = [
-    'lightgreen', 'darkgreen', 'green', 'yellowgreen',
-    'lightblue', 'darkblue', 'blue', 'skyblue',
-    'pink', 'darkred', 'red', 'lightcoral',
+    'lightgreen', 'yellowgreen', 'green', 'darkgreen', 
+    'lightblue', 'skyblue', 'darkblue', 'blue', 
+    'pink', 'lightcoral', 'red', 'darkred', 
     'gray'
 ]
 

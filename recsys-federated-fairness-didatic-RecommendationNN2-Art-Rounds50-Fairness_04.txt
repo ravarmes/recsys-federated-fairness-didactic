@@ -63,18 +63,21 @@ G_09_NAOFEDER_NR
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
 
 Group Loss Variance (Rgrp Inicial)                                      : 2.460917950  
-Group Loss Variance (Rgrp Final [1 :: Média Aritmética Rindv         ]) : 2.033185244  
-Group Loss Variance (Rgrp Final [1 :: Média Aritmética Loss          ]) : 0.041582055  
-Group Loss Variance (Rgrp Final [1 :: Média Aritmética NR            ]) : 0.044073686  
-Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 2.025325537  
-Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.105264559  
-Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.035818357  
-Group Loss Variance (Rgrp Final [5 :: Média Aritmética Rindv Fairness]) : 1.084815860  
-Group Loss Variance (Rgrp Final [5 :: Média Aritmética Loss Fairness ]) : 0.002292842  
-Group Loss Variance (Rgrp Final [5 :: Média Aritmética NR Fairness   ]) : 0.021344073  
+
 Group Loss Variance (Rgrp Final [9 :: Não Federado :: Rindv          ]) : 2.029275894  
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética Rindv         ]) : 2.033185244  
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 2.025325537  
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Rindv Fairness]) : 1.084815860  
+
 Group Loss Variance (Rgrp Final [9 :: Não Federado :: Loss           ]) : 0.037420399  
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética Loss          ]) : 0.041582055  
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.105264559  
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Loss Fairness ]) : 0.002292842  
+
 Group Loss Variance (Rgrp Final [9 :: Não Federado :: NR             ]) : 0.036891621  
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética NR            ]) : 0.044073686  
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.035818357  
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética NR Fairness   ]) : 0.021344073  
 
 RMSE Inicial                                      : 2.407640219
 RMSE Final [1 :: Média Aritmética Rindv         ] : 2.272031546

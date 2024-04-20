@@ -55,17 +55,21 @@ def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=100, 
         # print(f"=== Treinamento no Cliente {i + 1} ===")
         indices_nao_avaliados = (avaliacoes[i] == 0).nonzero(as_tuple=False).squeeze()
 
+        # Gerando avaliações com base no índice i: NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP
         indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
-        # indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP]]
         novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP,)).float()
+
+        # Gerando avaliações com base no índice G[i]: NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP
+        # indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP]]
+        # novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP,)).float()
 
         # Atualizar avaliações iniciais com novas avaliações
         avaliacoes_final[i][indices_novas_avaliacoes] = novas_avaliacoes
         avaliacoes_final_cliente = avaliacoes.clone()  # Usar clone para manter as avaliações iniciais
         avaliacoes_final_cliente[i][indices_novas_avaliacoes] = novas_avaliacoes
 
-        quantidade_valores_diferentes_de_zero = len([valor for valor in avaliacoes_final_cliente[i] if valor != 0])
         # modelos_clientes_nr.append((i, NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP))
+        quantidade_valores_diferentes_de_zero = len([valor for valor in avaliacoes_final_cliente[i] if valor != 0])
         modelos_clientes_nr.append((i, quantidade_valores_diferentes_de_zero))
 
         # if (i == 0):
@@ -155,13 +159,11 @@ def agregar_modelos_locais_ao_global_media_aritmetica_gradientes(modelo_global, 
             param_global -= learning_rate * gradientes_medios[i]
 
 def agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(modelo_global, modelos_clientes, modelos_clientes_rindv):
-    # Calcular o total de perdas
-    total_perdas = sum(perda for _, perda in modelos_clientes_rindv)
-    # print("total_perdas")
-    # print(total_perdas)
+    # Calcular o total das injustiças individuais (Rindv)
+    total_rindv = sum(rindv for _, rindv in modelos_clientes_rindv)
 
-    # Calcular os pesos de agregação baseados nas perdas
-    pesos = [perda / total_perdas for _, perda in modelos_clientes_rindv]
+    # Calcular os pesos de agregação baseados nas rindv's
+    pesos = [rindv / total_rindv for _, rindv in modelos_clientes_rindv]
 
     # Atualizar os parâmetros do modelo global com a média ponderada
     with torch.no_grad():
@@ -173,10 +175,10 @@ def agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(modelo_global, m
             param_global.copy_(param_medio)
 
 def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(modelo_global, modelos_clientes, modelos_clientes_loss):
-    # Calcular o total de perdas
+    # Calcular o total de perdas dos modelos locais (loss)
     total_perdas = sum(perda for _, perda in modelos_clientes_loss)
 
-    # Calcular os pesos de agregação baseados nas perdas
+    # Calcular os pesos de agregação baseados nas perdas (loss)
     pesos = [perda / total_perdas for _, perda in modelos_clientes_loss]
     # print("\n\nagregar_modelos_locais_ao_global_media_poderada_pesos_loss")
     # print("modelos_clientes_loss")
@@ -192,7 +194,7 @@ def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(modelo_global, mo
             param_global.copy_(param_medio)
 
 def agregar_modelos_locais_ao_global_media_poderada_pesos_nr(modelo_global, modelos_clientes, modelos_clientes_nr):
-    # Calcular o total_nr
+    # Calcular o número total de avaliações (NR - Number Ratings)
     total_nr = sum(nr for _, nr in modelos_clientes_nr)
     # print("total_nr")
     # print(total_nr)
@@ -280,10 +282,7 @@ def main():
     modelo_global_naofederado_09_rindv_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
     modelo_global_naofederado_09_loss_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
     modelo_global_naofederado_09_nr_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
-    modelo_global_naofederado_10_mp_rindv_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
-    modelo_global_naofederado_11_mp_loss_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
-    modelo_global_naofederado_12_mp_nr_tensor = copy.deepcopy(modelo_global_federado_01_ma_rindv_tensor)
-
+    
 
     with torch.no_grad():
         recomendacoes_inicial_01_ma_tensor = modelo_global_federado_01_ma_rindv_tensor(avaliacoes_inicial_tensor)
@@ -306,13 +305,11 @@ def main():
     avaliacoes_final_09_naofederado_rindv_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
     avaliacoes_final_09_naofederado_loss_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
     avaliacoes_final_09_naofederado_nr_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
-    # avaliacoes_final_10_mp_rindv_naofederado_tensor = avaliacoes_inicial_tensor
-    # avaliacoes_final_11_mp_loss_naofederado_tensor = avaliacoes_inicial_tensor
-    # avaliacoes_final_12_mp_nr_naofederado_tensor = avaliacoes_inicial_tensor
+
 
     G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 
-    # Atribui o mesmo dicionário a cada uma das variáveis
+    # Atribui o mesmo dicionário a cada uma das variáveis (apenas para inicializar os treinamentos locais)
     G_01_MA_RINDV = G.copy()
     G_01_MA_LOSS = G.copy()
     G_01_MA_NR = G.copy()
@@ -326,7 +323,7 @@ def main():
     G_09_NAOFEDER_LOSS = G.copy()
     G_09_NAOFEDER_NR = G.copy()
 
-    for round in range(10):
+    for round in range(15):
         print(f"\n=== ROUND {round} ===")
 
         print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")

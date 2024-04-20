@@ -34,20 +34,20 @@ G_09_NAOFEDER
 
 Group Loss Variance (Rgrp Inicial)                                      : 2.831942081
 
+Group Loss Variance (Rgrp Final [9 :: Não Federado :: Rindv          ]) : 1.329266310
 Group Loss Variance (Rgrp Final [1 :: Média Aritmética Rindv         ]) : 1.183228016
 Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 1.204451203
 Group Loss Variance (Rgrp Final [5 :: Média Aritmética Rindv Fairness]) : 0.212241113
-Group Loss Variance (Rgrp Final [9 :: Não Federado :: Rindv          ]) : 1.329266310
 
+Group Loss Variance (Rgrp Final [9 :: Não Federado :: Loss           ]) : 0.038108148
 Group Loss Variance (Rgrp Final [1 :: Média Aritmética Loss          ]) : 0.013411881
 Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.014299184
 Group Loss Variance (Rgrp Final [5 :: Média Aritmética Loss Fairness ]) : 0.002684069
-Group Loss Variance (Rgrp Final [9 :: Não Federado :: Loss           ]) : 0.038108148
 
+Group Loss Variance (Rgrp Final [9 :: Não Federado :: NR             ]) : 0.000177377
 Group Loss Variance (Rgrp Final [1 :: Média Aritmética NR            ]) : 0.002814092
 Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.001609969
 Group Loss Variance (Rgrp Final [5 :: Média Aritmética NR Fairness   ]) : 0.004381874
-Group Loss Variance (Rgrp Final [9 :: Não Federado :: NR             ]) : 0.000177377
 
 RMSE Inicial                                : 2.682234764
 RMSE Final [1 :: Média Aritmética         ] : 2.023848772
