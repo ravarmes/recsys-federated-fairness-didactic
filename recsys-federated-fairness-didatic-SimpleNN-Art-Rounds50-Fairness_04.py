@@ -31,8 +31,8 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     return torch.tensor(dados), dados
     
 def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=100, learning_rate=0.034):
-    # optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
-    optimizer = optim.Adam(modelo.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
+    optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
+    # optimizer = optim.Adam(modelo.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
     modelo.train()
     for epoch in range(epochs):
         optimizer.zero_grad()
@@ -56,12 +56,12 @@ def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=100, 
         indices_nao_avaliados = (avaliacoes[i] == 0).nonzero(as_tuple=False).squeeze()
 
         # Gerando avaliações com base no índice i: NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP
-        indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
-        novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP,)).float()
+        # indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
+        # novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP,)).float()
 
         # Gerando avaliações com base no índice G[i]: NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP
-        # indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP]]
-        # novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP,)).float()
+        indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP]]
+        novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP,)).float()
 
         # Atualizar avaliações iniciais com novas avaliações
         avaliacoes_final[i][indices_novas_avaliacoes] = novas_avaliacoes
@@ -80,14 +80,21 @@ def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=100, 
 
 
         # modelo_cliente_local = copy.deepcopy(modelo_cliente)  # Clonando o modelo_cliente para um novo objeto
-        # optimizer_cliente = optim.SGD(modelo_cliente.parameters(), lr=learning_rate)
-        optimizer_cliente = optim.Adam(modelo_cliente.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
+        optimizer_cliente = optim.SGD(modelo_cliente.parameters(), lr=learning_rate)
+        # optimizer_cliente = optim.Adam(modelo_cliente.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
         modelo_cliente.train()
+
+        # for _ in range(epochs):
+        #     optimizer_cliente.zero_grad()
+        #     output_cliente = modelo_cliente(avaliacoes_final_cliente)
+        #     loss_cliente = criterion(output_cliente, avaliacoes_final_cliente)
+        #     loss_cliente.backward()
+        #     optimizer_cliente.step()
 
         for _ in range(epochs):
             optimizer_cliente.zero_grad()
-            output_cliente = modelo_cliente(avaliacoes_final_cliente)
-            loss_cliente = criterion(output_cliente, avaliacoes_final_cliente)
+            output_cliente = modelo_cliente(avaliacoes_final_cliente[i])
+            loss_cliente = criterion(output_cliente, avaliacoes_final_cliente[i])
             loss_cliente.backward()
             optimizer_cliente.step()
 
@@ -165,6 +172,10 @@ def agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(modelo_global, m
     # Calcular os pesos de agregação baseados nas rindv's
     pesos = [rindv / total_rindv for _, rindv in modelos_clientes_rindv]
 
+    # print("\n\agregar_modelos_locais_ao_global_media_poderada_pesos_rindv")
+    # print("modelos_clientes_rindv :: pesos")
+    # print(pesos)
+
     # Atualizar os parâmetros do modelo global com a média ponderada
     with torch.no_grad():
         for i, param_global in enumerate(modelo_global.parameters()):
@@ -181,7 +192,7 @@ def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(modelo_global, mo
     # Calcular os pesos de agregação baseados nas perdas (loss)
     pesos = [perda / total_perdas for _, perda in modelos_clientes_loss]
     # print("\n\nagregar_modelos_locais_ao_global_media_poderada_pesos_loss")
-    # print("modelos_clientes_loss")
+    # print("modelos_clientes_loss :: pesos")
     # print(pesos)
 
     # Atualizar os parâmetros do modelo global com a média ponderada
@@ -206,7 +217,7 @@ def agregar_modelos_locais_ao_global_media_poderada_pesos_nr(modelo_global, mode
     total_pesos = sum(pesos)
     pesos = [peso / total_pesos for peso in pesos]
     # print("\n\nagregar_modelos_locais_ao_global_media_poderada_pesos_nr")
-    # print("modelos_clientes_nr")
+    # print("modelos_clientes_nr :: pesos")
     # print(pesos)
 
     # Atualizar os parâmetros do modelo global com a média ponderada
@@ -323,7 +334,7 @@ def main():
     G_09_NAOFEDER_LOSS = G.copy()
     G_09_NAOFEDER_NR = G.copy()
 
-    for round in range(15):
+    for round in range(3):
         print(f"\n=== ROUND {round} ===")
 
         print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")
@@ -441,18 +452,18 @@ def main():
 
         # Agrupamento dos usuários no Sistema de Recomendação Federado com Justiça
         # ??? Verificar se posso treinar o modelo baseado nas recomendações e não somente nas avaliações (como feito para os outros). Ou, ver se consigo gerar um modelo à partir dos tensores (mas de outra forma)
-        # recomendacoes_final_05_ma_rindv_fairness_df = aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global_federado_05_ma_rindv_fairness_tensor, avaliacoes_final_05_ma_rindv_fairness_tensor, G_05_MA_RINDV)
-        recomendacoes_final_05_ma_rindv_fairness_df = aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global_federado_05_ma_rindv_fairness_tensor, avaliacoes_final_05_ma_rindv_fairness_tensor, G_01_MA_NR)
+        recomendacoes_final_05_ma_rindv_fairness_df = aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global_federado_05_ma_rindv_fairness_tensor, avaliacoes_final_05_ma_rindv_fairness_tensor, G_05_MA_RINDV)
+        # recomendacoes_final_05_ma_rindv_fairness_df = aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global_federado_05_ma_rindv_fairness_tensor, avaliacoes_final_05_ma_rindv_fairness_tensor, G_01_MA_NR)
         recomendacoes_final_05_ma_rindv_fairness_tensor = torch.tensor(recomendacoes_final_05_ma_rindv_fairness_df.values, dtype=torch.float32)
         treinar_modelo_global(modelo_global_federado_05_ma_rindv_fairness_tensor, recomendacoes_final_05_ma_rindv_fairness_tensor, criterion)
         
-        # recomendacoes_final_05_ma_loss_fairness_df = aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global_federado_05_ma_loss_fairness_tensor, avaliacoes_final_05_ma_loss_fairness_tensor, G_05_MA_LOSS)
-        recomendacoes_final_05_ma_loss_fairness_df = aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global_federado_05_ma_loss_fairness_tensor, avaliacoes_final_05_ma_loss_fairness_tensor, G_01_MA_NR)
+        recomendacoes_final_05_ma_loss_fairness_df = aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global_federado_05_ma_loss_fairness_tensor, avaliacoes_final_05_ma_loss_fairness_tensor, G_05_MA_LOSS)
+        # recomendacoes_final_05_ma_loss_fairness_df = aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global_federado_05_ma_loss_fairness_tensor, avaliacoes_final_05_ma_loss_fairness_tensor, G_01_MA_NR)
         recomendacoes_final_05_ma_loss_fairness_tensor = torch.tensor(recomendacoes_final_05_ma_loss_fairness_df.values, dtype=torch.float32)
         treinar_modelo_global(modelo_global_federado_05_ma_loss_fairness_tensor, recomendacoes_final_05_ma_loss_fairness_tensor, criterion)
 
-        # recomendacoes_final_05_ma_nr_fairness_df = aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global_federado_05_ma_nr_fairness_tensor, avaliacoes_final_05_ma_nr_fairness_tensor, G_05_MA_NR)
-        recomendacoes_final_05_ma_nr_fairness_df = aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global_federado_05_ma_nr_fairness_tensor, avaliacoes_final_05_ma_nr_fairness_tensor, G_01_MA_NR)
+        recomendacoes_final_05_ma_nr_fairness_df = aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global_federado_05_ma_nr_fairness_tensor, avaliacoes_final_05_ma_nr_fairness_tensor, G_05_MA_NR)
+        # recomendacoes_final_05_ma_nr_fairness_df = aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global_federado_05_ma_nr_fairness_tensor, avaliacoes_final_05_ma_nr_fairness_tensor, G_01_MA_NR)
         recomendacoes_final_05_ma_nr_fairness_tensor = torch.tensor(recomendacoes_final_05_ma_nr_fairness_df.values, dtype=torch.float32)
         treinar_modelo_global(modelo_global_federado_05_ma_nr_fairness_tensor, recomendacoes_final_05_ma_nr_fairness_tensor, criterion)
         
