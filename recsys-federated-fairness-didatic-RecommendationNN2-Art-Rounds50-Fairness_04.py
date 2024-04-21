@@ -49,7 +49,7 @@ def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=1, learni
         loss.backward()
         optimizer.step()
 
-def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=1, learning_rate=1):
+def treinar_modelos_locais_2(modelo_global, avaliacoes, G, criterion, epochs=1, learning_rate=1):
     # Inicialização de dados e listas
     avaliacoes_final = avaliacoes.clone()
     modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes.size(0))] # criando uma cópia de modelo global inicial para cada usuário
@@ -97,8 +97,9 @@ def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=1, le
         # Treinando o modelo com base apenas nas avaliações do cliente em específico (i)
         for _ in range(epochs):
             optimizer_cliente.zero_grad()
-            predictions = modelo_cliente(usuarios_ids[i], itens_ids).view(num_usuarios, num_itens).float()
-            predictions_cliente = predictions[i]  # Seleciona apenas as previsões do cliente 'i'
+            user_tensor = torch.tensor([usuarios_ids[i]], dtype=torch.long)
+            item_tensor = torch.tensor(itens_ids, dtype=torch.long)  # Presumindo que itens_ids é uma lista dos IDs de todos os itens.
+            predictions_cliente = modelo_cliente(user_tensor, item_tensor).squeeze()  # Remove qualquer dimensão unitária
             avaliacoes_cliente = avaliacoes_final_cliente[i]
             loss_cliente = criterion(predictions_cliente, avaliacoes_cliente)
             loss_cliente.backward()
@@ -106,6 +107,87 @@ def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=1, le
 
         with torch.no_grad():
             recomendacoes_cliente = modelo_cliente(usuarios_ids, itens_ids).view(num_usuarios, num_itens)
+
+        # Calculando as perdas individuais (lis) dos clientes em cada modelo de cliente
+        avaliacoes_final_cliente_np = avaliacoes_final_cliente.numpy()
+        avaliacoes_final_cliente_df = pd.DataFrame(avaliacoes_final_cliente_np)
+        recomendacoes_cliente_np = recomendacoes_cliente.numpy()
+        recomendacoes_cliente_df = pd.DataFrame(recomendacoes_cliente_np)
+        omega_avaliacoes_final_cliente_df = (avaliacoes_final_cliente_df != 0)
+
+        ilv_cliente = IndividualLossVariance(avaliacoes_final_cliente_df, omega_avaliacoes_final_cliente_df, 1)
+        lis_cliente = ilv_cliente.get_losses(recomendacoes_cliente_df)
+
+        modelos_clientes_rindv.append((i, lis_cliente[i])) # injustiças individuais do cliente local em seu respectivo modelo local
+        modelos_clientes_loss.append((i, loss_cliente.item())) # perdas dos modelos locais
+
+    return avaliacoes_final, modelos_clientes, modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr
+
+def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=1, learning_rate=1):
+    # Inicialização de dados e listas
+    avaliacoes_final = avaliacoes.clone()
+    modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes.size(0))] # criando uma cópia de modelo global inicial para cada usuário
+    modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr = [], [], []
+    
+    NUMBER_ADVANTAGED_GROUP = 15
+    NR_ADVANTAGED_GROUP = 5
+    NR_DISADVANTAGED_GROUP = 1
+
+    num_usuarios, num_itens = avaliacoes.shape
+    usuarios_ids, itens_ids = torch.meshgrid(torch.arange(num_usuarios), torch.arange(num_itens), indexing='ij')
+    usuarios_ids, itens_ids = usuarios_ids.flatten().long(), itens_ids.flatten().long()
+
+    for i, modelo_cliente in enumerate(modelos_clientes):
+        # print(f"=== Treinamento no Cliente {i + 1} ===")
+        indices_nao_avaliados = (avaliacoes[i] == 0).nonzero(as_tuple=False).squeeze()
+
+        # Gerando avaliações com base no índice i: NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP
+        indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
+        novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP,)).float()
+
+        # # Gerando avaliações com base no índice G[i]: NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP
+        # indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP]]
+        # novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP,)).float()
+        
+        avaliacoes_final[i, indices_novas_avaliacoes] = novas_avaliacoes
+        avaliacoes_final_cliente = avaliacoes.clone()
+        avaliacoes_final_cliente[i, indices_novas_avaliacoes] = novas_avaliacoes
+
+        # modelos_clientes_nr.append((i, NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP))
+        quantidade_valores_diferentes_de_zero = len([valor for valor in avaliacoes_final_cliente[i] if valor != 0])
+        modelos_clientes_nr.append((i, quantidade_valores_diferentes_de_zero))
+
+        optimizer_cliente = optim.SGD(modelo_cliente.parameters(), lr=learning_rate, momentum=0.9)
+        # optimizer_cliente = optim.Adam(modelo_cliente.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
+        
+        # Treinando o modelo com base na matriz completa de avaliações
+        for _ in range(epochs):
+            optimizer_cliente.zero_grad()
+            predictions = modelo_cliente(usuarios_ids, itens_ids).view(num_usuarios, num_itens).float()
+            loss_cliente = criterion(predictions, avaliacoes_final_cliente)
+            loss_cliente.backward()
+            optimizer_cliente.step()
+
+        # Treinando o modelo com base apenas nas avaliações do cliente em específico (i)
+        # for epoch in range(epochs):
+        #     optimizer_cliente.zero_grad()
+            
+        #     # Repetindo o ID do usuário para cada item
+        #     usuario_id = torch.tensor([i] * num_itens, dtype=torch.long)  # Repetindo o ID do usuário para cada item
+        #     itens_ids = torch.arange(num_itens, dtype=torch.long)  # IDs dos itens
+
+        #     # Obter as previsões para o cliente específico
+        #     predictions_cliente = modelo_cliente(usuario_id, itens_ids).view(1, num_itens)  # Conferindo se a saída está em [1, num_itens]
+        #     avaliacoes_cliente = avaliacoes[i, :].float().unsqueeze(0)  # Mudando a forma para [1, num_itens], para correspondência
+
+        #     # Cálculo da perda corrigindo o problema de broadcasting
+        #     loss_cliente = criterion(predictions_cliente, avaliacoes_cliente)
+        #     loss_cliente.backward()
+        #     optimizer_cliente.step()
+
+        with torch.no_grad():
+            user_ids_full = usuarios_ids.view(num_usuarios, num_itens).repeat(1, num_itens).flatten()  # Repete para cada item
+            recomendacoes_cliente = modelo_cliente(user_ids_full, itens_ids).reshape(num_usuarios, num_itens)
 
         # Calculando as perdas individuais (lis) dos clientes em cada modelo de cliente
         avaliacoes_final_cliente_np = avaliacoes_final_cliente.numpy()
