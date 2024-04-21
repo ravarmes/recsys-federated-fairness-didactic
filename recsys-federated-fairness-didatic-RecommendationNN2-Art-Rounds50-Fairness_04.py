@@ -36,7 +36,7 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     dados = np.loadtxt(caminho_do_arquivo, delimiter=',', dtype=np.float32)
     return torch.tensor(dados), dados
     
-def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=10, learning_rate=0.1):
+def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=1, learning_rate=1):
     optimizer = optim.SGD(modelo_global.parameters(), lr=learning_rate, momentum=0.9)
     # optimizer = optim.Adam(modelo_global.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
     num_usuarios, num_itens = avaliacoes.shape
@@ -49,7 +49,7 @@ def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=10, learn
         loss.backward()
         optimizer.step()
 
-def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=10, learning_rate=0.1):
+def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=1, learning_rate=1):
     # Inicialização de dados e listas
     avaliacoes_final = avaliacoes.clone()
     modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes.size(0))] # criando uma cópia de modelo global inicial para cada usuário
@@ -71,7 +71,7 @@ def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=10, l
         indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
         novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP,)).float()
 
-        # Gerando avaliações com base no índice G[i]: NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP
+        # # Gerando avaliações com base no índice G[i]: NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP
         # indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP]]
         # novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP,)).float()
         
@@ -85,10 +85,22 @@ def treinar_modelos_locais(modelo_global, avaliacoes, G, criterion, epochs=10, l
 
         optimizer_cliente = optim.SGD(modelo_cliente.parameters(), lr=learning_rate, momentum=0.9)
         # optimizer_cliente = optim.Adam(modelo_cliente.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
-        for epoch in range(epochs):
+        
+        # Treinando o modelo com base na matriz completa de avaliações
+        # for _ in range(epochs):
+        #     optimizer_cliente.zero_grad()
+        #     predictions = modelo_cliente(usuarios_ids, itens_ids).view(num_usuarios, num_itens).float()
+        #     loss_cliente = criterion(predictions, avaliacoes_final_cliente)
+        #     loss_cliente.backward()
+        #     optimizer_cliente.step()
+
+        # Treinando o modelo com base apenas nas avaliações do cliente em específico (i)
+        for _ in range(epochs):
             optimizer_cliente.zero_grad()
-            predictions = modelo_cliente(usuarios_ids, itens_ids).view(num_usuarios, num_itens).float()
-            loss_cliente = criterion(predictions, avaliacoes_final_cliente)
+            predictions = modelo_cliente(usuarios_ids[i], itens_ids).view(num_usuarios, num_itens).float()
+            predictions_cliente = predictions[i]  # Seleciona apenas as previsões do cliente 'i'
+            avaliacoes_cliente = avaliacoes_final_cliente[i]
+            loss_cliente = criterion(predictions_cliente, avaliacoes_cliente)
             loss_cliente.backward()
             optimizer_cliente.step()
 
@@ -116,7 +128,7 @@ def agregar_modelos_locais_ao_global_media_aritmetica_pesos(modelo_global, model
             cliente_params = torch.stack([list(cliente.parameters())[i].data for cliente in modelos_clientes])
             param_global.copy_(cliente_params.mean(dim=0))
 
-def agregar_modelos_locais_ao_global_media_aritmetica_gradientes(modelo_global, modelos_clientes, learning_rate=0.034):
+def agregar_modelos_locais_ao_global_media_aritmetica_gradientes(modelo_global, modelos_clientes, learning_rate=0.1):
     with torch.no_grad():
         global_params = list(modelo_global.parameters())
         
@@ -350,7 +362,7 @@ def main():
     G_09_NAOFEDER_LOSS = G.copy()
     G_09_NAOFEDER_NR = G.copy()
 
-    for round in range(3):
+    for round in range(1):
         print(f"\n=== ROUND {round} ===")
 
         print("\n=== CLIENTES (ETAPA DE TREINAMENTOS LOCAIS) ===")

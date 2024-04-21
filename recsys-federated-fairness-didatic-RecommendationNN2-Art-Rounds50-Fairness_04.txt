@@ -124,3 +124,30 @@ NR_DISADVANTAGED_GROUP = 1
 
 === MEDIDA DE JUSTIÇA ===
 
+
+====================================================================================================
+====================================================================================================
+====================================================================================================
+
+---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
+NR_ADVANTAGED_GROUP = 5     # número de avaliações geradas para os clientes do grupo dos favorecidos
+NR_DISADVANTAGED_GROUP = 1  # número de avaliações geradas para os clientes do grupo dos desfavorecidos
+---------------------------------------------------------------------------------------------------------
+ROUNDS: 3 | Melhores hiperparâmetros: {'learning_rate': 0.1, 'epochs': 5}
+
+:: treinar_modelos_locais
+No treinamento local: gerando a quantidade de avaliações baseadas nos grupos recebidos por parâmetro (G[i])
+>> indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP]]
+>> quantidade_valores_diferentes_de_zero = len([valor for valor in avaliacoes_final_cliente[i] if valor != 0])
+>> modelos_clientes_nr.append((i, quantidade_valores_diferentes_de_zero))
+
+Modelo cliente está aprendendo considerando apenas as avaliações do cliente específico
+>> output_cliente = modelo_cliente(avaliacoes_final_cliente[i])
+>> loss_cliente = criterion(output_cliente, avaliacoes_final_cliente[i])
+
+:: aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global
+h = 5 nas matrizes estimadas
+
+
