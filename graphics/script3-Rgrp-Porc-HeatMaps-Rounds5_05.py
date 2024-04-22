@@ -2,12 +2,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Dados
-categorias = ['WAVG Fair', 'AVG Fair', 'WAVG', 'AVG']
+categorias = ['AVG', 'AVG Fair', 'WAVG', 'WAVG Fair']
 
 porcentagens_reducao = [
-    47.56, 58.13, 31.01, 38.76,
-    60.15, 58.13, 27.92, 38.76,
-    63.41, 58.13, 27.45, 38.76
+    37.20, 57.75, 30.84, 47.43,
+    37.20, 57.75, 28.23, 60.32,
+    37.20, 57.75, 27.32, 63.35
 ]
 
 # Reorganizando os dados em uma matriz 3x4 para o heatmap
@@ -26,7 +26,7 @@ ax.set_yticklabels(['NR', 'Loss', 'Rindv'])
 for i in range(3):
     for j in range(4):
         # Aqui, omitimos as posições que não queremos mostrar (posição [1,1] para 58.13, [1,3] para 38.76)
-        if (i, j) not in [(0, 1), (2, 1), (0, 3), (2, 3)]:
+        if (i, j) not in [(0, 0), (2, 0), (0, 1), (2, 1)]:
             ax.text(j, i, f'{dados_heatmap[i, j]:.2f}%', ha='center', va='center', color='black')
 
 plt.colorbar(im, ax=ax)
