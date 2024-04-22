@@ -23,8 +23,8 @@ cores = [
 
 fig, ax = plt.subplots(figsize=(14, 8))
 bars = ax.barh(categorias, valores, color=cores)
-ax.set_xlabel('Injustiça do Grupo (Rounds = 5)')
-ax.set_title('Comparação da Injustiça do Grupo entre Diferentes Métodos de Agregação')
+ax.set_xlabel('Injustiça do Grupo')
+ax.set_title('Comparação da Injustiça do Grupo entre Diferentes Métodos de Agregação (Rounds = 3)')
 ax.grid(True, linestyle='--', alpha=0.6)  # Adiciona grid
 ax.set_xlim(right=max(valores)*1.1)  # Ajusta um limite para eixo X
 
