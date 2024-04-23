@@ -1,19 +1,19 @@
 import matplotlib.pyplot as plt
 
 # Dados
-categorias = ['WAVG Fair', 'AVG Fair', 'WAVG', 'AVG', 'NFS']
+categorias = ['WAVG Fair', 'WAVG', 'AVG Fair', 'AVG', 'NFS']
 
 valores = [
-    [0.253794730, 0.209656239, 0.333889246, 0.296403408, 0.483972609],
-    [0.191555917, 0.201281041, 0.346457183, 0.266793668, 0.480675876],
-    [0.176923722, 0.201010257, 0.350863844, 0.346341550, 0.483585000]
+    [(0.176923722+0.191555917+0.253794730)/3, (0.350863844+0.346457183+0.333889246)/3, 0.203982512, 0.303179542, 0.482744495],
+    [(0.175494105+0.203449160+0.290951431)/3, (0.291007280+0.287494898+0.278166384)/3, 0.241593122, 0.293804646, 0.577241898]
 ]
 
 # Preparando os dados para o boxplot
 data_boxplot = [list(bucket) for bucket in zip(*valores)]
 
 # Configurações do boxplot
-fig, ax = plt.subplots(figsize=(10, 9))
+# fig, ax = plt.subplots(figsize=(10, 9))
+fig, ax = plt.subplots(figsize=(14, 8))
 
 boxprops = dict(facecolor='skyblue', color='black')
 medianprops = dict(color='red')
@@ -25,11 +25,11 @@ bp = ax.boxplot(data_boxplot, labels=categorias, patch_artist=True, boxprops=box
 # ax.set_xlabel('Métodos de Agregação', labelpad=10)
 ax.set_ylabel('Injustiça do Grupo', labelpad=10)
 
-plt.title('Boxplot da Injustiça do Grupo por Métodos de Agregação', pad=10)
+plt.title('Distribuição Quantitativa da Injustiça por Métodos de Agregação', pad=10)
 plt.grid(True, linestyle='--', alpha=0.3)
 
 # Ajuste da escala no eixo y com intervalos de 0.025
-ax.set_yticks([i / 100 for i in range(17, 49, 2)])  # Intervalo de 0.025 de 0.175 a 0.49
+ax.set_yticks([i / 100 for i in range(19, 60, 2)])  # Intervalo de 0.025 de 0.175 a 0.49
 
 plt.tight_layout()
 plt.show()

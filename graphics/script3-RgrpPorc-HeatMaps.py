@@ -5,16 +5,17 @@ import numpy as np
 categorias = ['AVG', 'AVG Fair', 'WAVG', 'WAVG Fair']
 
 porcentagens_reducao = [
-    38.76, 58.13, 31.01, 47.56,
-    38.76, 58.13, 27.92, 60.15,
-    38.76, 58.13, 27.45, 63.41
+    43.68, 57.96, 42.26, 48.61,
+    43.68, 57.96, 40.19, 62.73,
+    43.68, 57.96, 39.45, 66.75
 ]
 
 # Reorganizando os dados em uma matriz 3x4 para o heatmap
 dados_heatmap = np.array(porcentagens_reducao).reshape(3, 4)
 
 # Configurações do heatmap
-fig, ax = plt.subplots(figsize=(10, 6))
+#fig, ax = plt.subplots(figsize=(10, 6))
+fig, ax = plt.subplots(figsize=(14, 8))
 im = ax.imshow(dados_heatmap, cmap='coolwarm')
 
 ax.set_xticks(np.arange(len(categorias)))
