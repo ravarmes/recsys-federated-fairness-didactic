@@ -1,0 +1,431 @@
+---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
+NR_ADVANTAGED_GROUP = 10     # número de avaliações geradas para os clientes do grupo dos favorecidos
+NR_DISADVANTAGED_GROUP = 1  # número de avaliações geradas para os clientes do grupo dos desfavorecidos
+---------------------------------------------------------------------------------------------------------
+ROUNDS: 5 | Melhores hiperparâmetros: {'learning_rate': 0.1, 'epochs': 10}
+optimizer = optim.SGD(modelo.parameters(), lr=learning_rate) ********************************************
+
+embedding_size = 10
+hidden_size = 16
+
+:: treinar_modelos_locais
+No treinamento local: gerando a quantidade de avaliações NÃO baseadas nos grupos recebidos por parâmetro (mas no índice i)
+>> indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
+>> quantidade_valores_diferentes_de_zero = len([valor for valor in avaliacoes_final_cliente[i] if valor != 0])
+>> modelos_clientes_nr.append((i, quantidade_valores_diferentes_de_zero))
+
+Modelo cliente está aprendendo considerando apenas as avaliações do cliente específico
+>> output_cliente = modelo_cliente(avaliacoes_final_cliente[i])
+>> loss_cliente = criterion(output_cliente, avaliacoes_final_cliente[i])
+
+:: aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global
+h = 5 nas matrizes estimadas
+
+=== MEDIDA DE JUSTIÇA ===
+
+Polarization Inicial (Rpol)                                        : 0.001899823
+Polarization Final   (Rpol [1 :: Média Aritmética               ]) : 0.049320601
+Polarization Final   (Rpol [2 :: Média Ponderada Rindv          ]) : 0.049001448
+Polarization Final   (Rpol [3 :: Média Ponderada Loss           ]) : 0.173487395
+Polarization Final   (Rpol [4 :: Média Ponderada NR             ]) : 0.000000000
+Polarization Final   (Rpol [5 :: Média Aritmética Fairness      ]) : 0.014896736
+Polarization Final   (Rpol [6 :: Média Ponderada Fairness Rindv ]) : 0.019681303
+Polarization Final   (Rpol [7 :: Média Ponderada Fairness Loss  ]) : 0.067432910
+Polarization Final   (Rpol [8 :: Média Ponderada Fairness NR    ]) : 0.000000000
+Polarization Final   (Rpol [9 :: Não Federado                   ]) : 0.011036997
+
+Individual Loss Variance (Rindv Inicial)                                      : 3.094405413
+Individual Loss Variance (Rindv Final [1 :: Média Aritmética               ]) : 0.243546650
+Individual Loss Variance (Rindv Final [2 :: Média Ponderada Rindv          ]) : 0.239761963
+Individual Loss Variance (Rindv Final [3 :: Média Ponderada Loss           ]) : 0.562785327
+Individual Loss Variance (Rindv Final [4 :: Média Ponderada NR             ]) : 0.183319733
+Individual Loss Variance (Rindv Final [5 :: Média Aritmética       Fairness]) : 0.581624627
+Individual Loss Variance (Rindv Final [6 :: Média Ponderada Rindv Fairness ]) : 0.532786548
+Individual Loss Variance (Rindv Final [7 :: Média Ponderada Loss Fairness  ]) : 0.138226986
+Individual Loss Variance (Rindv Final [8 :: Média Ponderada NR Fairness    ]) : 0.137837946
+Individual Loss Variance (Rindv Final [9 :: Não Federado                   ]) : 1.374599576
+
+--------------------------------------------------------------------------------
+G
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+
+Group Loss Variance (Rgrp Inicial)                                      : 0.027413748
+
+Group Loss Variance (Rgrp Final [9 :: Não Federado                   ]) : 0.000498312
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética               ]) : 0.000183588
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Fairness      ]) : 0.000345793
+
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 0.000145363
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.014042673
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.003026896
+
+Group Loss Variance (Rgrp Final [6 :: Média Ponderada Rindv Fairness ]) : 0.000227997
+Group Loss Variance (Rgrp Final [7 :: Média Ponderada Loss Fairness  ]) : 0.000193948
+Group Loss Variance (Rgrp Final [8 :: Média Ponderada NR Fairness    ]) : 0.002414315
+
+--------------------------------------------------------------------------------
+G_Gender
+[183, 200, 272, 247, 220, 212, 251, 141, 175, 137, 99, 299, 94, 230, 87, 86, 7, 270, 60, 120, 48, 170, 205, 16, 30, 160, 41, 37, 96, 261, 69, 129, 176, 107, 19, 266, 123, 32, 13, 84, 271, 134, 64, 124, 288, 1, 227, 257, 279, 159, 285, 74, 276, 18, 248, 135, 67, 252, 80, 117, 194, 26, 17, 127, 56, 61, 138, 102, 295, 76, 126, 3, 77, 296, 207, 177, 292, 156, 161, 108, 27, 165, 191, 51, 4, 174, 5, 269, 168, 283, 70, 21, 209, 162, 289, 232, 198, 82, 66, 249, 273, 54, 238, 281, 72, 297, 184, 293, 105, 149, 49, 203, 188, 258, 10, 196, 210, 71, 139, 291, 226, 33, 233, 52, 142, 186, 118, 166, 189, 23, 95, 112, 50, 151, 181, 45, 88, 12, 89, 231, 55, 68, 147, 294, 169, 125, 208, 103, 93, 85, 28, 286, 259, 39, 58, 222, 267, 211, 223, 201, 152, 245, 224, 178, 143, 140, 229, 47, 154, 110, 277, 136, 0, 206, 40, 100, 250, 2, 65, 11, 278, 29, 246, 36, 83, 15, 22, 20, 24, 234, 287, 146, 256, 130, 280, 38, 131, 187, 218, 57, 164, 128, 78, 282, 172, 43, 44, 182, 132, 115, 298, 219, 75, 109, 265, 8, 90, 260, 239, 148, 202, 153, 262, 53, 79, 59, 263, 255, 284, 204, 9, 237, 6, 111, 268, 240, 274, 46, 275, 62]
+
+Group Loss Variance (Rgrp Inicial)                                      : 0.002575032
+
+Group Loss Variance (Rgrp Final [9 :: Não Federado                   ]) : 0.001712062
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética               ]) : 0.001258270
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Fairness      ]) : 0.001655871
+
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 0.001201976
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.000780306
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.000032274
+
+Group Loss Variance (Rgrp Final [6 :: Média Ponderada Rindv Fairness ]) : 0.001349916
+Group Loss Variance (Rgrp Final [7 :: Média Ponderada Loss Fairness  ]) : 0.000129704
+Group Loss Variance (Rgrp Final [8 :: Média Ponderada NR Fairness    ]) : 0.000060023
+
+--------------------------------------------------------------------------------
+G_Age
+[14, 194, 273, 132, 262]
+
+Group Loss Variance (Rgrp Inicial)                                      : 0.119839706
+
+Group Loss Variance (Rgrp Final [9 :: Não Federado                   ]) : 0.038413618
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética               ]) : 0.009354572
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Fairness      ]) : 0.034449793
+
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 0.009233604
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.022183606
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.003381463
+
+Group Loss Variance (Rgrp Final [6 :: Média Ponderada Rindv Fairness ]) : 0.031874388
+Group Loss Variance (Rgrp Final [7 :: Média Ponderada Loss Fairness  ]) : 0.001609688
+Group Loss Variance (Rgrp Final [8 :: Média Ponderada NR Fairness    ]) : 0.003382255
+
+--------------------------------------------------------------------------------
+
+RMSE Inicial                                      : 2.686538935
+
+RMSE Final [9 :: Não Federado                   ] : 2.038476944
+
+RMSE Final [1 :: Média Aritmética               ] : 1.117106915
+RMSE Final [5 :: Média Aritmética Fairness      ] : 1.245895624
+
+RMSE Final [2 :: Média Ponderada Rindv          ] : 1.113051653
+RMSE Final [3 :: Média Ponderada Loss           ] : 1.358336210
+RMSE Final [4 :: Média Ponderada NR             ] : 1.207600832
+
+RMSE Final [6 :: Média Ponderada Fairness Rindv ] : 1.227863669
+RMSE Final [7 :: Média Ponderada Fairness Loss  ] : 1.180417776
+RMSE Final [8 :: Média Ponderada Fairness NR    ] : 1.134890318
+
+
+---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
+NR_ADVANTAGED_GROUP = 10     # número de avaliações geradas para os clientes do grupo dos favorecidos
+NR_DISADVANTAGED_GROUP = 1  # número de avaliações geradas para os clientes do grupo dos desfavorecidos
+---------------------------------------------------------------------------------------------------------
+ROUNDS: 5 | Melhores hiperparâmetros: {'learning_rate': 0.1, 'epochs': 10}
+optimizer = optim.SGD(modelo.parameters(), lr=learning_rate) ********************************************
+
+embedding_size = 10
+hidden_size = 16
+
+:: treinar_modelos_locais
+No treinamento local: gerando a quantidade de avaliações NÃO baseadas nos grupos recebidos por parâmetro (mas no índice i)
+>> indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
+>> quantidade_valores_diferentes_de_zero = len([valor for valor in avaliacoes_final_cliente[i] if valor != 0])
+>> modelos_clientes_nr.append((i, quantidade_valores_diferentes_de_zero))
+
+Modelo cliente está aprendendo considerando apenas as avaliações do cliente específico
+>> output_cliente = modelo_cliente(avaliacoes_final_cliente[i])
+>> loss_cliente = criterion(output_cliente, avaliacoes_final_cliente[i])
+
+:: aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global
+h = 5 nas matrizes estimadas
+
+
+=== MEDIDA DE JUSTIÇA ===
+
+Polarization Inicial (Rpol)                                        : 0.024963947
+Polarization Final   (Rpol [1 :: Média Aritmética               ]) : 0.036946893
+Polarization Final   (Rpol [2 :: Média Ponderada Rindv          ]) : 0.029640805
+Polarization Final   (Rpol [3 :: Média Ponderada Loss           ]) : 0.135100558
+Polarization Final   (Rpol [4 :: Média Ponderada NR             ]) : 0.000000000
+Polarization Final   (Rpol [5 :: Média Aritmética Fairness      ]) : 0.036657918
+Polarization Final   (Rpol [6 :: Média Ponderada Fairness Rindv ]) : 0.035879523
+Polarization Final   (Rpol [7 :: Média Ponderada Fairness Loss  ]) : 0.069208935
+Polarization Final   (Rpol [8 :: Média Ponderada Fairness NR    ]) : 0.000000000
+Polarization Final   (Rpol [9 :: Não Federado                   ]) : 0.125792786
+
+Individual Loss Variance (Rindv Inicial)                                      : 1.382793427
+Individual Loss Variance (Rindv Final [1 :: Média Aritmética               ]) : 0.934474051
+Individual Loss Variance (Rindv Final [2 :: Média Ponderada Rindv          ]) : 1.039709687
+Individual Loss Variance (Rindv Final [3 :: Média Ponderada Loss           ]) : 0.447066665
+Individual Loss Variance (Rindv Final [4 :: Média Ponderada NR             ]) : 0.183260098
+Individual Loss Variance (Rindv Final [5 :: Média Aritmética       Fairness]) : 0.128360361
+Individual Loss Variance (Rindv Final [6 :: Média Ponderada Rindv Fairness ]) : 0.137977645
+Individual Loss Variance (Rindv Final [7 :: Média Ponderada Loss Fairness  ]) : 0.159387052
+Individual Loss Variance (Rindv Final [8 :: Média Ponderada NR Fairness    ]) : 0.138508841
+Individual Loss Variance (Rindv Final [9 :: Não Federado                   ]) : 1.219964385
+G
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+
+Group Loss Variance (Rgrp Inicial)                                      : 0.009228401
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética               ]) : 0.012641921
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 0.009459646
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.011667897
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.002698775
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Fairness      ]) : 0.000191340
+Group Loss Variance (Rgrp Final [6 :: Média Ponderada Rindv Fairness ]) : 0.000328779
+Group Loss Variance (Rgrp Final [7 :: Média Ponderada Loss Fairness  ]) : 0.000041997
+Group Loss Variance (Rgrp Final [8 :: Média Ponderada NR Fairness    ]) : 0.001547440
+Group Loss Variance (Rgrp Final [9 :: Não Federado                   ]) : 0.412582844
+
+RMSE Inicial                                      : 2.008416653
+RMSE Final [1 :: Média Aritmética               ] : 1.752998471
+RMSE Final [2 :: Média Ponderada Rindv          ] : 1.828715801
+RMSE Final [3 :: Média Ponderada Loss           ] : 1.337557435
+RMSE Final [4 :: Média Ponderada NR             ] : 1.207402825
+RMSE Final [5 :: Média Aritmética Fairness      ] : 1.194865346
+RMSE Final [6 :: Média Ponderada Fairness Rindv ] : 1.213257551
+RMSE Final [7 :: Média Ponderada Fairness Loss  ] : 1.237817526
+RMSE Final [8 :: Média Ponderada Fairness NR    ] : 1.139229774
+RMSE Final [9 :: Não Federado                   ] : 1.891899705
+--------------------------------------------------------------------------------
+G_Gender
+[183, 200, 272, 247, 220, 212, 251, 141, 175, 137, 99, 299, 94, 230, 87, 86, 7, 270, 60, 120, 48, 170, 205, 16, 30, 160, 41, 37, 96, 261, 69, 129, 176, 107, 19, 266, 123, 32, 13, 84, 271, 134, 64, 124, 288, 1, 227, 257, 279, 159, 285, 74, 276, 18, 248, 135, 67, 252, 80, 117, 194, 26, 17, 127, 56, 61, 138, 102, 295, 76, 126, 3, 77, 296, 207, 177, 292, 156, 161, 108, 27, 165, 191, 51, 4, 174, 5, 269, 168, 283, 70, 21, 209, 162, 289, 232, 198, 82, 66, 249, 273, 54, 238, 281, 72, 297, 184, 293, 105, 149, 49, 203, 188, 258, 10, 196, 210, 71, 139, 291, 226, 33, 233, 52, 142, 186, 118, 166, 189, 23, 95, 112, 50, 151, 181, 45, 88, 12, 89, 231, 55, 68, 147, 294, 169, 125, 208, 103, 93, 85, 28, 286, 259, 39, 58, 222, 267, 211, 223, 201, 152, 245, 224, 178, 143, 140, 229, 47, 154, 110, 277, 136, 0, 206, 40, 100, 250, 2, 65, 11, 278, 29, 246, 36, 83, 15, 22, 20, 24, 234, 287, 146, 256, 130, 280, 38, 131, 187, 218, 57, 164, 128, 78, 282, 172, 43, 44, 182, 132, 115, 298, 219, 75, 109, 265, 8, 90, 260, 239, 148, 202, 153, 262, 53, 79, 59, 263, 255, 284, 204, 9, 237, 6, 111, 268, 240, 274, 46, 275, 62]
+
+Group Loss Variance (Rgrp Inicial)                                      : 0.002681858
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética               ]) : 0.002609506
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 0.002335818
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.002139414
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.000034513
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Fairness      ]) : 0.000474639
+Group Loss Variance (Rgrp Final [6 :: Média Ponderada Rindv Fairness ]) : 0.000434889
+Group Loss Variance (Rgrp Final [7 :: Média Ponderada Loss Fairness  ]) : 0.000635437
+Group Loss Variance (Rgrp Final [8 :: Média Ponderada NR Fairness    ]) : 0.000070388
+Group Loss Variance (Rgrp Final [9 :: Não Federado                   ]) : 0.036529280
+G_Age
+[14, 194, 273, 132, 262]
+
+Group Loss Variance (Rgrp Inicial)                                      : 0.087196268
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética               ]) : 0.055097163
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 0.059521027
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.031768985
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.003350011
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Fairness      ]) : 0.004466798
+Group Loss Variance (Rgrp Final [6 :: Média Ponderada Rindv Fairness ]) : 0.004963913
+Group Loss Variance (Rgrp Final [7 :: Média Ponderada Loss Fairness  ]) : 0.005335683
+Group Loss Variance (Rgrp Final [8 :: Média Ponderada NR Fairness    ]) : 0.003235517
+Group Loss Variance (Rgrp Final [9 :: Não Federado                   ]) : 0.044735011
+
+
+---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
+NR_ADVANTAGED_GROUP = 10     # número de avaliações geradas para os clientes do grupo dos favorecidos
+NR_DISADVANTAGED_GROUP = 1  # número de avaliações geradas para os clientes do grupo dos desfavorecidos
+---------------------------------------------------------------------------------------------------------
+ROUNDS: 5 | Melhores hiperparâmetros: {'learning_rate': 0.01, 'epochs': 300}
+optimizer = optim.SGD(modelo.parameters(), lr=learning_rate) ********************************************
+
+embedding_size = 10
+hidden_size = 16
+
+:: treinar_modelos_locais
+No treinamento local: gerando a quantidade de avaliações NÃO baseadas nos grupos recebidos por parâmetro (mas no índice i)
+>> indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
+>> quantidade_valores_diferentes_de_zero = len([valor for valor in avaliacoes_final_cliente[i] if valor != 0])
+>> modelos_clientes_nr.append((i, quantidade_valores_diferentes_de_zero))
+
+Modelo cliente está aprendendo considerando apenas as avaliações do cliente específico
+>> output_cliente = modelo_cliente(avaliacoes_final_cliente[i])
+>> loss_cliente = criterion(output_cliente, avaliacoes_final_cliente[i])
+
+:: aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global
+h = 5 nas matrizes estimadas
+
+=== MEDIDA DE JUSTIÇA ===
+
+Polarization Inicial (Rpol)                                        : 0.008296696
+Polarization Final   (Rpol [1 :: Média Aritmética               ]) : 0.038608763
+Polarization Final   (Rpol [2 :: Média Ponderada Rindv          ]) : 0.038417794
+Polarization Final   (Rpol [3 :: Média Ponderada Loss           ]) : 0.243281409
+Polarization Final   (Rpol [4 :: Média Ponderada NR             ]) : 0.000000000
+Polarization Final   (Rpol [5 :: Média Aritmética Fairness      ]) : 0.012619901
+Polarization Final   (Rpol [6 :: Média Ponderada Fairness Rindv ]) : 0.012821485
+Polarization Final   (Rpol [7 :: Média Ponderada Fairness Loss  ]) : 0.156580716
+Polarization Final   (Rpol [8 :: Média Ponderada Fairness NR    ]) : 0.000000000
+Polarization Final   (Rpol [9 :: Não Federado                   ]) : 0.050935261
+
+Individual Loss Variance (Rindv Inicial)                                      : 1.455506563
+Individual Loss Variance (Rindv Final [1 :: Média Aritmética               ]) : 0.321330577
+Individual Loss Variance (Rindv Final [2 :: Média Ponderada Rindv          ]) : 0.325121701
+Individual Loss Variance (Rindv Final [3 :: Média Ponderada Loss           ]) : 0.249696344
+Individual Loss Variance (Rindv Final [4 :: Média Ponderada NR             ]) : 0.183196113
+Individual Loss Variance (Rindv Final [5 :: Média Aritmética       Fairness]) : 0.125789508
+Individual Loss Variance (Rindv Final [6 :: Média Ponderada Rindv Fairness ]) : 0.126482874
+Individual Loss Variance (Rindv Final [7 :: Média Ponderada Loss Fairness  ]) : 0.358967304
+Individual Loss Variance (Rindv Final [8 :: Média Ponderada NR Fairness    ]) : 0.138564736
+Individual Loss Variance (Rindv Final [9 :: Não Federado                   ]) : 1.277590275
+G
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+
+Group Loss Variance (Rgrp Inicial)                                      : 0.005489364
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética               ]) : 0.000390882
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 0.000473995
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.003279210
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.002574899
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Fairness      ]) : 0.000000375
+Group Loss Variance (Rgrp Final [6 :: Média Ponderada Rindv Fairness ]) : 0.000000007
+Group Loss Variance (Rgrp Final [7 :: Média Ponderada Loss Fairness  ]) : 0.002470750
+Group Loss Variance (Rgrp Final [8 :: Média Ponderada NR Fairness    ]) : 0.001113825
+Group Loss Variance (Rgrp Final [9 :: Não Federado                   ]) : 0.111415170
+
+RMSE Inicial                                      : 2.019079208
+RMSE Final [1 :: Média Aritmética               ] : 1.311898828
+RMSE Final [2 :: Média Ponderada Rindv          ] : 1.316983581
+RMSE Final [3 :: Média Ponderada Loss           ] : 1.257649183
+RMSE Final [4 :: Média Ponderada NR             ] : 1.203235626
+RMSE Final [5 :: Média Aritmética Fairness      ] : 1.084122181
+RMSE Final [6 :: Média Ponderada Fairness Rindv ] : 1.083602428
+RMSE Final [7 :: Média Ponderada Fairness Loss  ] : 1.199291468
+RMSE Final [8 :: Média Ponderada Fairness NR    ] : 1.133338094
+RMSE Final [9 :: Não Federado                   ] : 1.957686663
+--------------------------------------------------------------------------------
+G_Gender
+[183, 200, 272, 247, 220, 212, 251, 141, 175, 137, 99, 299, 94, 230, 87, 86, 7, 270, 60, 120, 48, 170, 205, 16, 30, 160, 41, 37, 96, 261, 69, 129, 176, 107, 19, 266, 123, 32, 13, 84, 271, 134, 64, 124, 288, 1, 227, 257, 279, 159, 285, 74, 276, 18, 248, 135, 67, 252, 80, 117, 194, 26, 17, 127, 56, 61, 138, 102, 295, 76, 126, 3, 77, 296, 207, 177, 292, 156, 161, 108, 27, 165, 191, 51, 4, 174, 5, 269, 168, 283, 70, 21, 209, 162, 289, 232, 198, 82, 66, 249, 273, 54, 238, 281, 72, 297, 184, 293, 105, 149, 49, 203, 188, 258, 10, 196, 210, 71, 139, 291, 226, 33, 233, 52, 142, 186, 118, 166, 189, 23, 95, 112, 50, 151, 181, 45, 88, 12, 89, 231, 55, 68, 147, 294, 169, 125, 208, 103, 93, 85, 28, 286, 259, 39, 58, 222, 267, 211, 223, 201, 152, 245, 224, 178, 143, 140, 229, 47, 154, 110, 277, 136, 0, 206, 40, 100, 250, 2, 65, 11, 278, 29, 246, 36, 83, 15, 22, 20, 24, 234, 287, 146, 256, 130, 280, 38, 131, 187, 218, 57, 164, 128, 78, 282, 172, 43, 44, 182, 132, 115, 298, 219, 75, 109, 265, 8, 90, 260, 239, 148, 202, 153, 262, 53, 79, 59, 263, 255, 284, 204, 9, 237, 6, 111, 268, 240, 274, 46, 275, 62]
+
+Group Loss Variance (Rgrp Inicial)                                      : 0.000260261
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética               ]) : 0.001246512
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 0.001194692
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.004058558
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.000034171
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Fairness      ]) : 0.000507290
+Group Loss Variance (Rgrp Final [6 :: Média Ponderada Rindv Fairness ]) : 0.000489964
+Group Loss Variance (Rgrp Final [7 :: Média Ponderada Loss Fairness  ]) : 0.001056725
+Group Loss Variance (Rgrp Final [8 :: Média Ponderada NR Fairness    ]) : 0.000074136
+Group Loss Variance (Rgrp Final [9 :: Não Federado                   ]) : 0.014103935
+G_Age
+[14, 194, 273, 132, 262]
+
+Group Loss Variance (Rgrp Inicial)                                      : 0.031314895
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética               ]) : 0.002074493
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 0.001795508
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.018249443
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.003296932
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Fairness      ]) : 0.004227822
+Group Loss Variance (Rgrp Final [6 :: Média Ponderada Rindv Fairness ]) : 0.004300266
+Group Loss Variance (Rgrp Final [7 :: Média Ponderada Loss Fairness  ]) : 0.063948825
+Group Loss Variance (Rgrp Final [8 :: Média Ponderada NR Fairness    ]) : 0.003073350
+Group Loss Variance (Rgrp Final [9 :: Não Federado                   ]) : 0.024846563
+
+
+---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
+NR_ADVANTAGED_GROUP = 10     # número de avaliações geradas para os clientes do grupo dos favorecidos
+NR_DISADVANTAGED_GROUP = 1  # número de avaliações geradas para os clientes do grupo dos desfavorecidos
+---------------------------------------------------------------------------------------------------------
+ROUNDS: 5 | Melhores hiperparâmetros: {'learning_rate': 0.01, 'epochs': 500}
+optimizer = optim.SGD(modelo.parameters(), lr=learning_rate) ********************************************
+
+embedding_size = 10
+hidden_size = 16
+
+=== MEDIDA DE JUSTIÇA ===
+
+Polarization Inicial (Rpol)                                        : 0.009616080
+Polarization Final   (Rpol [1 :: Média Aritmética               ]) : 0.023644922
+Polarization Final   (Rpol [2 :: Média Ponderada Rindv          ]) : 0.025837800
+Polarization Final   (Rpol [3 :: Média Ponderada Loss           ]) : 0.335039467
+Polarization Final   (Rpol [4 :: Média Ponderada NR             ]) : 0.000000000
+Polarization Final   (Rpol [5 :: Média Aritmética Fairness      ]) : 0.013819035
+Polarization Final   (Rpol [6 :: Média Ponderada Fairness Rindv ]) : 0.016705101
+Polarization Final   (Rpol [7 :: Média Ponderada Fairness Loss  ]) : 0.135768920
+Polarization Final   (Rpol [8 :: Média Ponderada Fairness NR    ]) : 0.000000000
+Polarization Final   (Rpol [9 :: Não Federado                   ]) : 0.046836060
+
+Individual Loss Variance (Rindv Inicial)                                      : 1.406035662
+Individual Loss Variance (Rindv Final [1 :: Média Aritmética               ]) : 0.295986772
+Individual Loss Variance (Rindv Final [2 :: Média Ponderada Rindv          ]) : 0.302362055
+Individual Loss Variance (Rindv Final [3 :: Média Ponderada Loss           ]) : 0.535325289
+Individual Loss Variance (Rindv Final [4 :: Média Ponderada NR             ]) : 0.183450997
+Individual Loss Variance (Rindv Final [5 :: Média Aritmética       Fairness]) : 0.134346232
+Individual Loss Variance (Rindv Final [6 :: Média Ponderada Rindv Fairness ]) : 0.136724651
+Individual Loss Variance (Rindv Final [7 :: Média Ponderada Loss Fairness  ]) : 0.248168379
+Individual Loss Variance (Rindv Final [8 :: Média Ponderada NR Fairness    ]) : 0.138815135
+Individual Loss Variance (Rindv Final [9 :: Não Federado                   ]) : 1.380697608
+
+G
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+
+Group Loss Variance (Rgrp Inicial)                                      : 0.001169229
+
+Group Loss Variance (Rgrp Final [9 :: Não Federado                   ]) : 0.094579056
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética               ]) : 0.000008973
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Fairness      ]) : 0.000409723
+
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 0.000000728
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.015035208
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.003970693
+
+Group Loss Variance (Rgrp Final [6 :: Média Ponderada Rindv Fairness ]) : 0.000324578
+Group Loss Variance (Rgrp Final [7 :: Média Ponderada Loss Fairness  ]) : 0.000185602
+Group Loss Variance (Rgrp Final [8 :: Média Ponderada NR Fairness    ]) : 0.002730327
+
+
+--------------------------------------------------------------------------------
+G_Gender
+[183, 200, 272, 247, 220, 212, 251, 141, 175, 137, 99, 299, 94, 230, 87, 86, 7, 270, 60, 120, 48, 170, 205, 16, 30, 160, 41, 37, 96, 261, 69, 129, 176, 107, 19, 266, 123, 32, 13, 84, 271, 134, 64, 124, 288, 1, 227, 257, 279, 159, 285, 74, 276, 18, 248, 135, 67, 252, 80, 117, 194, 26, 17, 127, 56, 61, 138, 102, 295, 76, 126, 3, 77, 296, 207, 177, 292, 156, 161, 108, 27, 165, 191, 51, 4, 174, 5, 269, 168, 283, 70, 21, 209, 162, 289, 232, 198, 82, 66, 249, 273, 54, 238, 281, 72, 297, 184, 293, 105, 149, 49, 203, 188, 258, 10, 196, 210, 71, 139, 291, 226, 33, 233, 52, 142, 186, 118, 166, 189, 23, 95, 112, 50, 151, 181, 45, 88, 12, 89, 231, 55, 68, 147, 294, 169, 125, 208, 103, 93, 85, 28, 286, 259, 39, 58, 222, 267, 211, 223, 201, 152, 245, 224, 178, 143, 140, 229, 47, 154, 110, 277, 136, 0, 206, 40, 100, 250, 2, 65, 11, 278, 29, 246, 36, 83, 15, 22, 20, 24, 234, 287, 146, 256, 130, 280, 38, 131, 187, 218, 57, 164, 128, 78, 282, 172, 43, 44, 182, 132, 115, 298, 219, 75, 109, 265, 8, 90, 260, 239, 148, 202, 153, 262, 53, 79, 59, 263, 255, 284, 204, 9, 237, 6, 111, 268, 240, 274, 46, 275, 62]
+
+Group Loss Variance (Rgrp Inicial)                                      : 0.000931919
+
+Group Loss Variance (Rgrp Final [9 :: Não Federado                   ]) : 0.016320013
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética               ]) : 0.000451852
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Fairness      ]) : 0.000303051
+
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 0.000413976
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.001142843
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.000025709
+
+Group Loss Variance (Rgrp Final [6 :: Média Ponderada Rindv Fairness ]) : 0.000296287
+Group Loss Variance (Rgrp Final [7 :: Média Ponderada Loss Fairness  ]) : 0.000484048
+Group Loss Variance (Rgrp Final [8 :: Média Ponderada NR Fairness    ]) : 0.000055061
+
+--------------------------------------------------------------------------------
+G_Age
+[14, 194, 273, 132, 262]
+
+Group Loss Variance (Rgrp Inicial)                                      : 0.057450991
+
+Group Loss Variance (Rgrp Final [9 :: Não Federado                   ]) : 0.067794427
+
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética               ]) : 0.008739954
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Fairness      ]) : 0.005982459
+
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 0.009269895
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.016280374
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.003424025
+
+Group Loss Variance (Rgrp Final [6 :: Média Ponderada Rindv Fairness ]) : 0.006325462
+Group Loss Variance (Rgrp Final [7 :: Média Ponderada Loss Fairness  ]) : 0.026584506
+Group Loss Variance (Rgrp Final [8 :: Média Ponderada NR Fairness    ]) : 0.003360532
+
+--------------------------------------------------------------------------------
+RMSE Inicial                                      : 2.018843412
+RMSE Final [1 :: Média Aritmética               ] : 1.295204282
+RMSE Final [2 :: Média Ponderada Rindv          ] : 1.299775600
+RMSE Final [3 :: Média Ponderada Loss           ] : 1.386364102
+RMSE Final [4 :: Média Ponderada NR             ] : 1.204030514
+RMSE Final [5 :: Média Aritmética Fairness      ] : 1.083798647
+RMSE Final [6 :: Média Ponderada Fairness Rindv ] : 1.085602164
+RMSE Final [7 :: Média Ponderada Fairness Loss  ] : 1.266982913
+RMSE Final [8 :: Média Ponderada Fairness NR    ] : 1.134538889
+RMSE Final [9 :: Não Federado                   ] : 1.964960933
