@@ -26,11 +26,20 @@ datasets = [
     np.array(porcentagens_reducao_Age).reshape(2, 4)
 ]
 
-titles = ['Redução de Rgrp :: Agrupamento por Atividade', 'Redução de Rgrp :: Agrupamento por Gênero', 'Redução de Rgrp :: Agrupamento por Idade']
+titles = ['Atividade', 'Gênero', 'Idade']
 
-fig, axs = plt.subplots(1, 3, figsize=(12, 6))
-fig.suptitle("Análise da Redução de Rgrp por Diferentes Agrupamentos", fontsize=16, y=1.05)
+# Configurações do gráfico
+# fig, axs = plt.subplots(1, 3, figsize=(12, 6))  # Figura estreita
+fig, axs = plt.subplots(1, 3, figsize=(18, 6))
 
+
+# Ajuste para deixar espaço para o título geral
+plt.subplots_adjust(top=0.9, right=0.85)
+
+# Adicionar título geral para a figura
+fig.suptitle("Análise da Redução de Rgrp por Diferentes Agrupamentos", fontsize=12, y=0.70)  # Posição mais baixa do título geral
+
+# Criar os subplots
 for ax, data, title in zip(axs, datasets, titles):
     im = ax.imshow(data, cmap='coolwarm')
     ax.set_xticks(np.arange(len(categorias)))
@@ -38,18 +47,20 @@ for ax, data, title in zip(axs, datasets, titles):
     ax.set_xticklabels(categorias)
     ax.set_yticklabels(['Loss', 'Rindv'])
     ax.set_title(title)
+
     for i in range(data.shape[0]):
         for j in range(data.shape[1]):
-            ax.text(j, i, f'{data[i, j]:.2f}%', ha='center', va='center', color='black')
+            # Aqui, omitimos as posições que não queremos mostrar (posição [1,1] para 58.13, [1,3] para 38.76)
+            if (i, j) not in [(0, 0), (0, 1)]:
+                if (i, j) in [(1, 0), (1, 1)]:
+                    ax.text(j, i-0.5, f'{data[i, j]:.2f}%', ha='center', va='center', color='black')
+                else:
+                    ax.text(j, i, f'{data[i, j]:.2f}%', ha='center', va='center', color='black')
 
-# Ajustes de layout
-fig.tight_layout(rect=[0, 0, 1, 0.95])  # Aréa total deixada para os subplots
+# Ajustar a altura da barra lateral (colorbar)
+#cbar_ax = fig.add_axes([0.88, 0.15, 0.03, 0.7])  # Alinhado com a altura dos subplots
+cbar_ax = fig.add_axes([0.88, 0.395, 0.03, 0.22])  # Reduz a altura da barra de cor
 
-# Espaço para a barra de legenda
-plt.subplots_adjust(right=0.85)
+fig.colorbar(im, cax=cbar_ax)  # Adiciona a barra de cor
 
-# Adicionando uma barra de legenda
-cbar_ax = fig.add_axes([0.88, 0.15, 0.03, 0.7])
-fig.colorbar(im, cax=cbar_ax)
-
-plt.show()
+plt.show()  # Exibe o gráfico
