@@ -50,6 +50,27 @@ class RecommenderGNN(torch.nn.Module):
 
         return x
 
+class Net(nn.Module):
+    def __init__(self, num_users, num_items, embedding_size) -> None:
+        super(Net, self).__init__()
+        self.user_embedding = nn.Embedding(num_users, embedding_size)  # Embedding para representar os usuários
+        self.item_embedding = nn.Embedding(num_items, embedding_size)  # Embedding para representar os itens
+        self.fc1 = nn.Linear(embedding_size * 2, 128)  # Considera embeddings de usuário e item
+        self.fc2 = nn.Linear(128, 64)
+        self.fc3 = nn.Linear(64, 1)  # Saída única para pontuação de item
+
+    def forward(self, user_indices: torch.Tensor, item_indices: torch.Tensor) -> torch.Tensor:
+        user_indices = user_indices.long()  # Convertendo para tipo inteiro
+        item_indices = item_indices.long()  # Convertendo para tipo inteiro
+        user_embedded = self.user_embedding(user_indices)
+        item_embedded = self.item_embedding(item_indices)
+        x = torch.cat((user_embedded, item_embedded), dim=1)  # Concatena embeddings de usuário e item
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = torch.sigmoid(self.fc3(x)) * 4 + 1  # Normalizar entre 1 e 5
+        return x
+
+
 
 def carregar_avaliacoes_do_arquivo_xls(caminho_do_arquivo):
     df = pd.read_excel(caminho_do_arquivo) # Carregar os dados do arquivo Excel para um DataFrame do pandas
@@ -63,12 +84,14 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     return torch.tensor(dados), dados
     
 def treinar_modelo_global(modelo, avaliacoes, criterion, epochs=1, learning_rate=0.02):
+    users_indices = avaliacoes[:, 0]  # Índices dos usuários
+    items_indices = avaliacoes[:, 1]  # Índices dos itens
     optimizer = optim.SGD(modelo.parameters(), lr=learning_rate)
     # optimizer = optim.Adam(modelo.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
     modelo.train()
     for epoch in range(epochs):
         optimizer.zero_grad()
-        output = modelo(avaliacoes)
+        output = modelo(users_indices, items_indices)
         loss = criterion(output, avaliacoes)
         loss.backward()
         optimizer.step()
@@ -133,81 +156,6 @@ def treinar_modelos_locais(modelo_global, avaliacoes, avaliacoes_random, G, crit
             loss_cliente = criterion(output_cliente, avaliacoes_final_cliente[i])
             loss_cliente.backward()
             optimizer_cliente.step()
-
-        with torch.no_grad():
-            recomendacoes_cliente = modelo_cliente(avaliacoes_final_cliente)
-
-        # Calculando as perdas individuais (lis) dos clientes em cada modelo de cliente
-        avaliacoes_final_cliente_np = avaliacoes_final_cliente.numpy()
-        avaliacoes_final_cliente_df = pd.DataFrame(avaliacoes_final_cliente_np)
-        recomendacoes_cliente_np = recomendacoes_cliente.numpy()
-        recomendacoes_cliente_df = pd.DataFrame(recomendacoes_cliente_np)
-        omega_avaliacoes_final_cliente_df = (avaliacoes_final_cliente_df != 0)
-
-        ilv_cliente = IndividualLossVariance(avaliacoes_final_cliente_df, omega_avaliacoes_final_cliente_df, 1)
-        lis_cliente = ilv_cliente.get_losses(recomendacoes_cliente_df)
-
-        modelos_clientes_rindv.append((i, lis_cliente[i])) # injustiças individuais do cliente local em seu respectivo modelo local
-        modelos_clientes_loss.append((i, loss_cliente.item())) # perdas dos modelos locais
-
-    # Retorna ambos: avaliações finais, avaliações finais por cliente, modelos dos clientes e perdas dos modelos (baseado na injustiça individual li)
-    return avaliacoes_final, modelos_clientes, modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr
-
-def treinar_modelos_locais2(modelo_global, avaliacoes, G, criterion, epochs=1000, learning_rate=0.02):
-    # Inicialização de dados e listas
-    avaliacoes_final = avaliacoes.clone()
-    modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes.size(0))] # criando uma cópia de modelo global inicial para cada usuário
-    modelos_clientes_rindv, modelos_clientes_loss, modelos_clientes_nr = [], [], []
-    
-    NUMBER_ADVANTAGED_GROUP = 15
-    NR_ADVANTAGED_GROUP = 10
-    NR_DISADVANTAGED_GROUP = 1
-
-    for i, modelo_cliente in enumerate(modelos_clientes):
-        # print(f"=== Treinamento no Cliente {i + 1} ===")
-        indices_nao_avaliados = (avaliacoes[i] == 0).nonzero(as_tuple=False).squeeze()
-
-        # Gerando avaliações com base no índice i: NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP
-        indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP]]
-        novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP,)).float()
-
-        # Gerando avaliações com base no índice G[i]: NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP
-        # indices_novas_avaliacoes = indices_nao_avaliados[torch.randperm(len(indices_nao_avaliados))[:NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP]]
-        # novas_avaliacoes = torch.randint(1, 6, (NR_ADVANTAGED_GROUP if i in G[1] else NR_DISADVANTAGED_GROUP,)).float()
-
-        # Atualizar avaliações iniciais com novas avaliações
-        avaliacoes_final[i][indices_novas_avaliacoes] = novas_avaliacoes
-        avaliacoes_final_cliente = avaliacoes.clone()  # Usar clone para manter as avaliações iniciais
-        avaliacoes_final_cliente[i][indices_novas_avaliacoes] = novas_avaliacoes
-
-        # modelos_clientes_nr.append((i, NR_ADVANTAGED_GROUP if i < NUMBER_ADVANTAGED_GROUP else NR_DISADVANTAGED_GROUP))
-        quantidade_valores_diferentes_de_zero = len([valor for valor in avaliacoes_final_cliente[i] if valor != 0])
-        modelos_clientes_nr.append((i, quantidade_valores_diferentes_de_zero))
-
-        # if (i == 0):
-        #     print(f"=== Treinamento no Cliente {i + 1} ===")
-        #     quantidade_valores_diferentes_de_zero = len([valor for valor in avaliacoes_final_cliente[i] if valor != 0])
-        #     print("quantidade_valores_diferentes_de_zero")
-        #     print(quantidade_valores_diferentes_de_zero)
-
-
-        optimizer_cliente = optim.SGD(modelo_cliente.parameters(), lr=learning_rate)
-        # optimizer_cliente = optim.Adam(modelo_cliente.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
-        modelo_cliente.train()
-
-        for _ in range(epochs):
-            optimizer_cliente.zero_grad()
-            output_cliente = modelo_cliente(avaliacoes_final_cliente)
-            loss_cliente = criterion(output_cliente, avaliacoes_final_cliente)
-            loss_cliente.backward()
-            optimizer_cliente.step()
-
-        # for _ in range(epochs):
-        #     optimizer_cliente.zero_grad()
-        #     output_cliente = modelo_cliente(avaliacoes_final_cliente[i])
-        #     loss_cliente = criterion(output_cliente, avaliacoes_final_cliente[i])
-        #     loss_cliente.backward()
-        #     optimizer_cliente.step()
 
         with torch.no_grad():
             recomendacoes_cliente = modelo_cliente(avaliacoes_final_cliente)
@@ -378,49 +326,12 @@ def main():
     caminho_do_arquivo = 'X_MovieLens-1M.xlsx'
     avaliacoes_inicial_tensor, avaliacoes_inicial_df = carregar_avaliacoes_do_arquivo_xls(caminho_do_arquivo)
 
-    # numero_de_usuarios = avaliacoes_inicial_tensor.shape[0]
-    # numero_de_itens = avaliacoes_inicial_tensor.shape[1]
+    numero_de_usuarios = avaliacoes_inicial_tensor.shape[0]
+    numero_de_itens = avaliacoes_inicial_tensor.shape[1]
 
-    # modelo_global_federado_01_ma_tensor = SimpleNN(numero_de_itens, 20, numero_de_itens)
-    # criterion = nn.MSELoss()
+    embedding_size = 32
 
-    # Suponha df como seu DataFrame
-    num_users, num_items = avaliacoes_inicial_df.shape
-
-    # Inicializando features de nós aleatoriamente
-    user_features = torch.rand((num_users, 20))
-    item_features = torch.rand((num_items, 20))
-
-    # Concatenando características dos usuários e itens
-    features = torch.cat((user_features, item_features), dim=0)
-
-    edges = []
-    weights = []
-
-    for i in range(num_users):
-        for j in range(num_items):
-            rating = avaliacoes_inicial_df.iloc[i, j]
-            if rating != 0:
-                # Lembre-se que índices dos itens devem ser deslocados por num_users
-                edges.append((i, num_users + j))
-                weights.append(rating)
-
-    # Convertendo listas em tensores do PyTorch
-    edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous()
-    weights = torch.tensor(weights, dtype=torch.float)
-
-    data = Data(x=features, edge_index=edge_index, edge_attr=weights)
-
-    # Define as dimensões da sua GNN
-    input_feature_dim = 20
-    hidden_dim = 64
-    output_dim = 1
-
-    # Instância do modelo
-    modelo_global_federado_01_ma_tensor = RecommenderGNN(input_feature_dim, hidden_dim, output_dim)
-
-    # Executando a passagem forward
-    output = modelo_global_federado_01_ma_tensor(data)
+    modelo_global_federado_01_ma_tensor = Net(numero_de_usuarios, numero_de_itens, embedding_size)
 
     criterion = nn.MSELoss()
 
@@ -437,7 +348,7 @@ def main():
    
 
     with torch.no_grad():
-        recomendacoes_inicial_01_ma_tensor = modelo_global_federado_01_ma_tensor(avaliacoes_inicial_tensor)
+        recomendacoes_inicial_01_ma_tensor = modelo_global_federado_01_ma_tensor(numero_de_usuarios, numero_de_itens)
 
     avaliacoes_final_01_ma_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
     avaliacoes_final_02_mp_rindv_tensor = copy.deepcopy(avaliacoes_inicial_tensor)
