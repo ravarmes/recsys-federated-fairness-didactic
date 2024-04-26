@@ -20,6 +20,7 @@ porcentagens_reducao_Age = [
     0, 62.20, 0, 65.02
 ]
 
+# DataSet dos Heatmaps
 datasets = [
     np.array(porcentagens_reducao_NR).reshape(2, 4),
     np.array(porcentagens_reducao_Gender).reshape(2, 4),
@@ -28,28 +29,29 @@ datasets = [
 
 titles = ['Redução de Rgrp :: Agrupamento por Atividade', 'Redução de Rgrp :: Agrupamento por Gênero', 'Redução de Rgrp :: Agrupamento por Idade']
 
-fig, axs = plt.subplots(1, 3, figsize=(12, 6))
-fig.suptitle("Análise da Redução de Rgrp por Diferentes Agrupamentos", fontsize=16, y=1.05)
+# Configurações do gráfico
+fig, axs = plt.subplots(1, 3, figsize=(18, 6))
 
+# Loop para criar cada subplot de heatmap
 for ax, data, title in zip(axs, datasets, titles):
     im = ax.imshow(data, cmap='coolwarm')
+
     ax.set_xticks(np.arange(len(categorias)))
     ax.set_yticks(np.arange(2))
     ax.set_xticklabels(categorias)
     ax.set_yticklabels(['Loss', 'Rindv'])
     ax.set_title(title)
+
+    # Adicionando texto dentro dos quadrados
     for i in range(data.shape[0]):
         for j in range(data.shape[1]):
             ax.text(j, i, f'{data[i, j]:.2f}%', ha='center', va='center', color='black')
 
-# Ajustes de layout
-fig.tight_layout(rect=[0, 0, 1, 0.95])  # Aréa total deixada para os subplots
+# Ajuste geral do layout
+fig.tight_layout()
 
-# Espaço para a barra de legenda
-plt.subplots_adjust(right=0.85)
-
-# Adicionando uma barra de legenda
-cbar_ax = fig.add_axes([0.88, 0.15, 0.03, 0.7])
+# Adicionando uma colorbar que é comum para todos os heatmaps
+cbar_ax = fig.add_axes([0.92, 0.15, 0.03, 0.7])  # left, bottom, width, height (in figure coordinate)
 fig.colorbar(im, cax=cbar_ax)
 
 plt.show()

@@ -37,7 +37,7 @@ def carregar_avaliacoes_do_arquivo_txt(caminho_do_arquivo):
     dados = np.loadtxt(caminho_do_arquivo, delimiter=',', dtype=np.float32)
     return torch.tensor(dados), dados
     
-def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=300, learning_rate=0.01):
+def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=500, learning_rate=0.01):
     optimizer = optim.SGD(modelo_global.parameters(), lr=learning_rate, momentum=0.9)
     # optimizer = optim.Adam(modelo_global.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0.001, amsgrad=False)
     num_usuarios, num_itens = avaliacoes.shape
@@ -50,7 +50,7 @@ def treinar_modelo_global(modelo_global, avaliacoes, criterion, epochs=300, lear
         loss.backward()
         optimizer.step()
 
-def treinar_modelos_locais(modelo_global, avaliacoes, avaliacoes_random, G, criterion, epochs=300, learning_rate=0.01):
+def treinar_modelos_locais(modelo_global, avaliacoes, avaliacoes_random, G, criterion, epochs=500, learning_rate=0.01):
     # Inicialização de dados e listas
     avaliacoes_final = avaliacoes.clone()
     modelos_clientes = [copy.deepcopy(modelo_global) for _ in range(avaliacoes.size(0))] # criando uma cópia de modelo global inicial para cada usuário
@@ -278,8 +278,12 @@ def main():
     # Exemplo de uso
     # num_usuarios = len(usuarios_ids_long)
     # num_itens = len(itens_ids_long)
+    
     embedding_size = 10
     hidden_size = 16
+
+    # embedding_size = 32
+    # hidden_size = 64
 
     modelo_global_federado_01_ma_tensor = RecommendationNN(num_usuarios, num_itens, embedding_size, hidden_size)
     criterion = nn.MSELoss() 
