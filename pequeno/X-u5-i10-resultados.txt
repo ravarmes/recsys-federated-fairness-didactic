@@ -1,0 +1,79 @@
+=== MEDIDA DE JUSTIÇA ===
+
+Polarization Inicial (Rpol)                                        : 0.134037539 OK
+Polarization Final   (Rpol [1 :: Média Aritmética               ]) : 0.072570823
+Polarization Final   (Rpol [2 :: Média Ponderada Rindv          ]) : 0.119008362
+Polarization Final   (Rpol [3 :: Média Ponderada Loss           ]) : 0.121430837
+Polarization Final   (Rpol [4 :: Média Ponderada NR             ]) : 0.080754779
+Polarization Final   (Rpol [5 :: Média Aritmética Fairness      ]) : 0.067552917
+Polarization Final   (Rpol [6 :: Média Ponderada Fairness Rindv ]) : 0.103286162
+Polarization Final   (Rpol [7 :: Média Ponderada Fairness Loss  ]) : 0.090272330
+Polarization Final   (Rpol [8 :: Média Ponderada Fairness NR    ]) : 0.078745984
+Polarization Final   (Rpol [9 :: Não Federado                   ]) : 0.070097439 OK
+
+Individual Loss Variance (Rindv Inicial)                                      : 0.864761055
+Individual Loss Variance (Rindv Final [1 :: Média Aritmética               ]) : 0.316355854
+Individual Loss Variance (Rindv Final [2 :: Média Ponderada Rindv          ]) : 0.259356976
+Individual Loss Variance (Rindv Final [3 :: Média Ponderada Loss           ]) : 0.070193574
+Individual Loss Variance (Rindv Final [4 :: Média Ponderada NR             ]) : 0.291078389
+Individual Loss Variance (Rindv Final [5 :: Média Aritmética       Fairness]) : 0.207725003
+Individual Loss Variance (Rindv Final [6 :: Média Ponderada Rindv Fairness ]) : 0.232909054
+Individual Loss Variance (Rindv Final [7 :: Média Ponderada Loss Fairness  ]) : 0.074122302
+Individual Loss Variance (Rindv Final [8 :: Média Ponderada NR Fairness    ]) : 0.097384982
+Individual Loss Variance (Rindv Final [9 :: Não Federado                   ]) : 0.305789381
+G
+[0, 1]
+
+Group Loss Variance (Rgrp Inicial)                                      : 0.853461981
+Group Loss Variance (Rgrp Final [1 :: Média Aritmética               ]) : 0.289708972
+Group Loss Variance (Rgrp Final [2 :: Média Ponderada Rindv          ]) : 0.045759164
+Group Loss Variance (Rgrp Final [3 :: Média Ponderada Loss           ]) : 0.004232892
+Group Loss Variance (Rgrp Final [4 :: Média Ponderada NR             ]) : 0.249066934
+Group Loss Variance (Rgrp Final [5 :: Média Aritmética Fairness      ]) : 0.176541954
+Group Loss Variance (Rgrp Final [6 :: Média Ponderada Rindv Fairness ]) : 0.176996097
+Group Loss Variance (Rgrp Final [7 :: Média Ponderada Loss Fairness  ]) : 0.000440073
+Group Loss Variance (Rgrp Final [8 :: Média Ponderada NR Fairness    ]) : 0.047839332
+Group Loss Variance (Rgrp Final [9 :: Não Federado                   ]) : 0.276368678
+
+RMSE Inicial                                      : 1.371652603
+RMSE Final [1 :: Média Aritmética               ] : 1.269653559
+RMSE Final [2 :: Média Ponderada Rindv          ] : 1.333412766
+RMSE Final [3 :: Média Ponderada Loss           ] : 1.282468915
+RMSE Final [4 :: Média Ponderada NR             ] : 1.245126486
+RMSE Final [5 :: Média Aritmética Fairness      ] : 1.146912932
+RMSE Final [6 :: Média Ponderada Fairness Rindv ] : 1.186385155
+RMSE Final [7 :: Média Ponderada Fairness Loss  ] : 1.207735658
+RMSE Final [8 :: Média Ponderada Fairness NR    ] : 1.154699326
+RMSE Final [9 :: Não Federado                   ] : 1.274023294
+
+avaliacoes_inicial_df
+     0    1    2    3    4    5    6    7    8    9
+0  2.0  3.0  3.0  4.0  2.0  0.0  1.0  0.0  2.0  0.0
+1  2.0  3.0  4.0  3.0  0.0  4.0  0.0  2.0  0.0  3.0
+2  5.0  0.0  1.0  0.0  4.0  0.0  1.0  0.0  2.0  0.0
+3  0.0  1.0  0.0  1.0  0.0  2.0  0.0  5.0  0.0  3.0
+4  2.0  0.0  4.0  0.0  4.0  0.0  4.0  0.0  5.0  0.0
+
+recomendacoes_inicial_01_ma_df
+          0         1         2         3         4         5         6         7         8         9
+0  2.611557  2.012884  2.962677  2.190348  2.263773  2.923108  2.215233  2.307884  2.444131  2.215899
+1  1.788369  1.979281  2.305919  1.922887  1.384434  3.099491  1.928149  1.803483  1.798884  2.208861
+2  3.047806  2.651329  3.225549  2.606788  2.845213  3.073396  2.455314  2.650494  2.287664  2.670031
+3  2.282970  2.339599  2.794798  2.305656  2.173036  3.285148  2.215970  2.103372  2.687009  2.659260
+4  3.381433  2.766648  3.324834  2.234066  3.281737  2.797088  1.877570  2.381128  2.125896  1.898749
+
+avaliacoes_final_09_naofederado_df
+     0    1    2    3    4    5    6    7    8    9
+0  2.0  3.0  3.0  4.0  2.0  3.0  1.0  0.0  2.0  3.0
+1  2.0  3.0  4.0  3.0  0.0  4.0  3.0  2.0  3.0  3.0
+2  5.0  0.0  1.0  0.0  4.0  3.0  1.0  3.0  2.0  0.0
+3  0.0  1.0  3.0  1.0  3.0  2.0  0.0  5.0  0.0  3.0
+4  2.0  0.0  4.0  0.0  4.0  3.0  4.0  0.0  5.0  3.0
+
+recomendacoes_final_09_naofederado_df
+          0         1         2         3         4         5         6         7         8         9
+0  1.921192  1.505524  2.819903  1.917662  1.997298  2.701002  1.688543  1.938553  2.416197  2.469048
+1  1.684962  1.409438  2.663488  1.546340  1.783186  2.858209  1.300375  1.724038  2.566288  2.356786
+2  2.347651  1.735698  3.358381  1.900131  2.686358  3.032196  1.853899  1.860105  2.136487  2.250874
+3  2.023795  1.743560  2.831206  1.830912  2.235368  2.951003  1.615627  1.834384  2.183187  2.505260
+4  2.844993  1.954316  3.187181  1.759156  3.275699  2.731186  1.612253  1.824455  2.554590  1.892719
