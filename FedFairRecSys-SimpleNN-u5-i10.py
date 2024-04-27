@@ -74,6 +74,10 @@ def treinar_modelos_locais(modelo_global, avaliacoes, avaliacoes_random, G, crit
 
         with torch.no_grad():
             recomendacoes_cliente = modelo_cliente(avaliacoes_final_cliente)
+        
+        if i == 0 or i == 1:
+            print(f"\navaliacoes_final_cliente {i}")
+            print(avaliacoes_final_cliente[i])
 
         avaliacoes_final[i] = avaliacoes_final_cliente[i]
 
@@ -577,19 +581,39 @@ def main():
     print("\navaliacoes_inicial_df")
     print(avaliacoes_inicial_df)
 
-    print("\nrecomendacoes_inicial_01_ma_df")
-    print(recomendacoes_inicial_01_ma_df)
+    print("\navaliacoes_final_05_ma_fairness_df")
+    print(avaliacoes_final_05_ma_fairness_df)
+
+    print("\nomega_final_05_ma_fairness")
+    print(omega_final_05_ma_fairness)
 
     print("\navaliacoes_final_09_naofederado_df")
     print(avaliacoes_final_09_naofederado_df)
+
+    print("\nomega_final_09_naofederado")
+    print(omega_final_09_naofederado)
+
+    print("\nrecomendacoes_final_05_ma_fairness_df")
+    print(recomendacoes_final_05_ma_fairness_df)
 
     print("\nrecomendacoes_final_09_naofederado_df")
     print(recomendacoes_final_09_naofederado_df)
 
     avaliacoes_inicial_df.to_excel("X-u10-avaliacoes_inicial.xlsx", index=False)
     recomendacoes_inicial_01_ma_df.to_excel("X-u10-recomendacoes_inicial_01_ma_df.xlsx", index=False)
+    avaliacoes_final_01_ma_df.to_excel("X-u10-avaliacoes_final_01_ma_df.xlsx", index=False)
+    avaliacoes_final_02_mp_rindv_df.to_excel("X-u10-avaliacoes_final_09_naofederado_df.xlsx", index=False)
+    avaliacoes_final_03_mp_loss_df.to_excel("X-u10-avaliacoes_final_03_mp_loss_df.xlsx", index=False)
+    avaliacoes_final_04_mp_nr_df.to_excel("X-u10-avaliacoes_final_04_mp_nr_df.xlsx", index=False)
+    avaliacoes_final_05_ma_fairness_df.to_excel("X-u10-avaliacoes_final_05_ma_fairness_df.xlsx", index=False)
+    avaliacoes_final_06_mp_rindv_fairness_df.to_excel("X-u10-avaliacoes_final_06_mp_rindv_fairness_df_df.xlsx", index=False)
+    avaliacoes_final_07_mp_loss_fairness_df.to_excel("X-u10-avaliacoes_final_07_mp_loss_fairness_df.xlsx", index=False)
+    avaliacoes_final_08_mp_nr_fairness_df.to_excel("X-u10-avaliacoes_final_08_mp_nr_fairness_df.xlsx", index=False)
     avaliacoes_final_09_naofederado_df.to_excel("X-u10-avaliacoes_final_09_naofederado_df.xlsx", index=False)
+
+    recomendacoes_final_05_ma_fairness_df.to_excel("X-u10-recomendacoes_final_05_ma_fairness_df.xlsx", index=False)
     recomendacoes_final_09_naofederado_df.to_excel("X-u10-recomendacoes_final_09_naofederado.xlsx", index=False)
+
 
 if __name__ == "__main__":
     main()
