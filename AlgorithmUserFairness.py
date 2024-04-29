@@ -174,9 +174,14 @@ class RMSE():
         self.omega = omega
         self.X = X.mask(~omega)        
         
+    # def evaluate(self, X_est):
+    #     X_not_na = self.X.values[~np.isnan(self.X.values)]
+    #     X_est_not_na = X_est.values[~np.isnan(self.X.values)]
+    #     return np.sqrt(mean_squared_error(X_not_na, X_est_not_na))
+    
+    
     def evaluate(self, X_est):
-        X_not_na = self.X.values[~np.isnan(self.X.values)]
-        X_est_not_na = X_est.values[~np.isnan(self.X.values)]
+        X_not_na = self.X.values[~np.isnan(self.X.values.astype(float))]
+        X_est_not_na = X_est.values[~np.isnan(self.X.values.astype(float))]
         return np.sqrt(mean_squared_error(X_not_na, X_est_not_na))
-
 #######################################################################################################################

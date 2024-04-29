@@ -1,18 +1,24 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
+# import os
+# import sys
+
+# Redirecionando stdout e stderr para /dev/null
+# sys.stdout = open(os.devnull, 'w')
+# sys.stderr = open(os.devnull, 'w')
+
+# Definir o nível de log para 'error' no TensorFlow
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+# Importar TensorFlow após configurar os logs
+import tensorflow as tf
+
 import copy
 import random
-from AlgorithmUserFairness import RMSE, Polarization, IndividualLossVariance, GroupLossVariance
-from AlgorithmImpartiality import AlgorithmImpartiality
-import random
-
-
-import tensorflow as tf
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error
+from AlgorithmUserFairness import RMSE, Polarization, IndividualLossVariance, GroupLossVariance
+from AlgorithmImpartiality import AlgorithmImpartiality
 
 class MatrixFactorizationNN(tf.keras.Model):
     def __init__(self, num_users, num_items, embedding_dim):
@@ -37,11 +43,19 @@ class MatrixFactorizationNN(tf.keras.Model):
         item_ids = np.tile(np.arange(self.num_items), self.num_users)
         pairs = np.vstack([user_ids, item_ids]).T
         predictions = self.predict(pairs)
-        return pd.DataFrame({
+        df = pd.DataFrame({
             "UserID": user_ids,
             "ItemID": item_ids,
             "Prediction": predictions.flatten()
-        }).pivot(index='UserID', columns='ItemID', values='Prediction')
+        })
+        df['Prediction'] = df['Prediction'].astype(float)
+
+        df_no_names = df.pivot(index='UserID', columns='ItemID', values='Prediction')
+        df_no_names.columns.name = None
+        df_no_names.index.name = None
+    
+        return df_no_names
+
     
 class ClienteFedRecSys:
 
@@ -50,7 +64,7 @@ class ClienteFedRecSys:
         self.modelo = modelo_global
         self.avaliacoes_locais = avaliacoes_locais
         self.modelo_loss = None
-        self.modelo_loos_indv = None
+        self.modelo_loss_indv = None
 
         self.X_train = None
         self.y_train = None
@@ -60,14 +74,10 @@ class ClienteFedRecSys:
         def item_nao_avaliado(item_id, avaliacoes_locais, user_id):
             return all((user_id, item_id) != (user, item) for user, item, _ in avaliacoes_locais)
 
-
         novas_avaliacoes = []
-
         items_nao_avaliados = [item_id for item_id in range(self.modelo.num_items) if item_nao_avaliado(item_id, self.avaliacoes_locais, self.id)]
-        
-        print(f"adicionar_novas_avaliacoes :: items_nao_avaliados :: UserID {self.id}")
-        print(items_nao_avaliados)
-
+        # print(f"adicionar_novas_avaliacoes :: items_nao_avaliados :: UserID {self.id}")
+        # print(items_nao_avaliados)
         random.shuffle(items_nao_avaliados)
         
         for _ in range(quantidade):
@@ -75,12 +85,11 @@ class ClienteFedRecSys:
                 break  # Se não houver mais itens não avaliados, interromper
             item_id = items_nao_avaliados.pop()
             rating = random.randint(1, 5) if aleatorio else (_ % 5) + 1
-            avaliacao = (self.id, item_id, rating)
+            avaliacao = (self.id, item_id, float(rating))
             novas_avaliacoes.append(avaliacao)
 
         self.avaliacoes_locais += novas_avaliacoes
 
-        # Atualizar self.X_train e self.y_train com os novos dados adicionados de forma eficiente
         novos_X = np.array([[self.id, item[1]] for item in novas_avaliacoes])
         novos_y = np.array([item[2] for item in novas_avaliacoes])
 
@@ -93,13 +102,7 @@ class ClienteFedRecSys:
 
 
 
-
-
     def treinar_modelo(self, learning_rate=0.02, epochs=2, batch_size=32, verbose=1):
-        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        self.modelo.compile(optimizer=optimizer, loss='mean_squared_error')
-        self.modelo.fit(self.X_train, self.y_train, epochs=epochs, batch_size=batch_size, verbose=verbose)
-
         optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         self.modelo.compile(optimizer=optimizer, loss='mean_squared_error')
         history = self.modelo.fit(self.X_train, self.y_train, epochs=epochs, batch_size=batch_size, verbose=verbose)
@@ -107,15 +110,64 @@ class ClienteFedRecSys:
         # Armazenar a perda do modelo após o treinamento
         self.modelo_loss = history.history['loss'][-1]
 
-        # Calcular e armazenar a perda individual referente ao usuário
-        loss_usuario = 0
-        for usuario, item_id, rating in self.avaliacoes_locais:
-            user_input = np.array([[usuario, item_id]])
-            prediction = self.modelo.predict(user_input)[0]
-            loss_usuario += (rating - prediction) ** 2
+        # Criar um array para armazenar os inputs
+        user_inputs = np.array([[usuario, item_id] for usuario, item_id, _ in self.avaliacoes_locais])
+
+        # Obter as previsões para todos os inputs de uma vez
+        predictions = self.modelo.predict(user_inputs)
+
+        # Calcular a perda individual para o usuário específico
+        loss_usuario_especifico = 0
+        for i, (_, _, rating) in enumerate(self.avaliacoes_locais):
+            prediction = predictions[i]
+            loss_usuario_especifico += (rating - prediction) ** 2
+
+        # Calcular o número total de avaliações do usuário específico
+        num_avaliacoes_usuario_especifico = len(self.avaliacoes_locais)
+
+        # Calcular a perda individual média para o usuário específico
+        modelo_loss_indv_usuario_especifico = loss_usuario_especifico / num_avaliacoes_usuario_especifico
+        self.modelo_loss_indv = modelo_loss_indv_usuario_especifico
+
+    # MÉTDO FUNCIONANDO CORRETAMENTE
+    # def treinar_modelo(self, learning_rate=0.02, epochs=2, batch_size=32, verbose=1):
+    #     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    #     self.modelo.compile(optimizer=optimizer, loss='mean_squared_error')
+    #     history = self.modelo.fit(self.X_train, self.y_train, epochs=epochs, batch_size=batch_size, verbose=verbose)
+    
+    #     # Armazenar a perda do modelo após o treinamento
+    #     self.modelo_loss = history.history['loss'][-1]
+
+    #     loss_usuario = 0
+    #     for usuario, item_id, rating in self.avaliacoes_locais:
+    #         user_input = np.array([[usuario, item_id]])
+    #         prediction = self.modelo.predict(user_input)[0]
+    #         loss_usuario += (rating - prediction) ** 2
         
-        num_avaliacoes = len(self.avaliacoes_locais)
-        self.modelo_loss_indv = loss_usuario / num_avaliacoes
+    #     num_avaliacoes = len(self.avaliacoes_locais)
+    #     self.modelo_loss_indv = loss_usuario / num_avaliacoes
+
+
+    # def treinar_modelo(self, learning_rate=0.02, epochs=2, batch_size=32, verbose=1):
+    #     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    #     self.modelo.compile(optimizer=optimizer, loss='mean_squared_error')
+    #     history = self.modelo.fit(self.X_train, self.y_train, epochs=epochs, batch_size=batch_size, verbose=verbose)
+        
+    #     self.modelo_loss = history.history['loss'][-1]
+
+    #     user_item_pairs = np.array([[usuario, item_id] for usuario, item_id, _ in self.avaliacoes_locais])
+    #     actual_ratings = np.array([rating for _, _, rating in self.avaliacoes_locais])
+
+    #     predictions = self.modelo.predict(user_item_pairs).flatten()
+        
+    #     # Calcular perda individual baseada nas predições em lote
+    #     loss_usuario = np.sum((actual_ratings - predictions) ** 2)
+        
+    #     # Calcular a perda média por avaliação
+    #     num_avaliacoes = len(self.avaliacoes_locais)
+    #     self.modelo_loss_indv = loss_usuario / num_avaliacoes
+
+
 
 class ServidorFedRecSys:
 
@@ -169,59 +221,62 @@ class ServidorFedRecSys:
     def agregar_modelos_locais_ao_global_media_aritmetica_pesos(self, modelos_clientes):
         pesos_globais = self.modelo_global.get_weights()
         pesos_clientes = [cliente.get_weights() for cliente in modelos_clientes]
-
         novos_pesos = []
         for i, _ in enumerate(pesos_globais):
             pesos_parametro = [pesos[i] for pesos in pesos_clientes]
             media_parametro = np.mean(pesos_parametro, axis=0)
             novos_pesos.append(media_parametro)
+        self.modelo_global.set_weights(novos_pesos)
 
+
+    def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(self, modelos_clientes, modelos_clientes_loss):
+        total_perdas = sum(modelos_clientes_loss)
+        pesos = [perda / total_perdas for perda in modelos_clientes_loss]
+        pesos_globais = self.modelo_global.get_weights()
+        pesos_clientes = [cliente.get_weights() for cliente in modelos_clientes]
+        novos_pesos = []
+        for i, _ in enumerate(pesos_globais):
+            pesos_parametro = [pesos[i] for pesos in pesos_clientes]
+            media_parametro = np.mean(pesos_parametro, axis=0)
+            novos_pesos.append(media_parametro)
+        self.modelo_global.set_weights(novos_pesos)
+
+    
+    def agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(self, modelos_clientes, modelos_clientes_loss_indv):
+        total_perdas = sum(modelos_clientes_loss_indv)
+        pesos = [perda / total_perdas for perda in modelos_clientes_loss_indv]
+        pesos_globais = self.modelo_global.get_weights()
+        pesos_clientes = [cliente.get_weights() for cliente in modelos_clientes]
+        novos_pesos = []
+        for i, _ in enumerate(pesos_globais):
+            pesos_parametro = [pesos[i] for pesos in pesos_clientes]
+            media_parametro = np.mean(pesos_parametro, axis=0)
+            novos_pesos.append(media_parametro)
         self.modelo_global.set_weights(novos_pesos)
 
 
 
-    def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(self, modelos_clientes, modelos_clientes_loss):
+    # def agregar_modelos_locais_ao_global_media_aritmetica_pesos(self, modelos_clientes):
+    #     pesos_clientes = np.stack([cliente.get_weights() for cliente in modelos_clientes])
+    #     novos_pesos = np.mean(pesos_clientes, axis=0)
+    #     novos_pesos = [tf.convert_to_tensor(peso) for peso in novos_pesos]
+    #     self.modelo_global.set_weights(novos_pesos)
 
-        # print("modelos_clientes_loss")
-        # print(modelos_clientes_loss)
+    # def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(self, modelos_clientes, modelos_clientes_loss):
+    #     total_perdas = sum(modelos_clientes_loss)
+    #     pesos = np.array([perda / total_perdas for perda in modelos_clientes_loss])
+    #     pesos_clientes = np.array([cliente.get_weights() for cliente in modelos_clientes])
+    #     novos_pesos = np.average(pesos_clientes, axis=0, weights=pesos)
+    #     self.modelo_global.set_weights(novos_pesos)
 
-        # Calcular o total de perdas dos modelos locais (loss)
-        total_perdas = sum(modelos_clientes_loss)
+    # def agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(self, modelos_clientes, modelos_clientes_loss_indv):
+    #     total_perdas = sum(modelos_clientes_loss_indv)
+    #     pesos = np.array([perda / total_perdas for perda in modelos_clientes_loss_indv])
+    #     pesos_clientes = np.array([cliente.get_weights() for cliente in modelos_clientes])
+    #     novos_pesos = np.average(pesos_clientes, axis=0, weights=pesos)
+    #     self.modelo_global.set_weights(novos_pesos)
 
-        # Calcular os pesos de agregação baseados nas perdas (loss)
-        pesos = [perda / total_perdas for perda in modelos_clientes_loss]
 
-        # Atualizar os parâmetros do modelo global com a média ponderada
-        with torch.no_grad():
-            for i, param_global in enumerate(self.modelo_global.parameters()):
-                param_medio = torch.zeros_like(param_global)
-                for j, peso in enumerate(pesos):
-                    cliente_params = list(modelos_clientes[j].parameters())[i].data
-                    param_medio += peso * cliente_params
-                param_global.copy_(param_medio)
-
-    
-    def agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(self, modelos_clientes, modelos_clientes_rindv):
-
-        # print("modelos_clientes_rindv")
-        # print(modelos_clientes_rindv)
-
-        # Calcular o total das injustiças individuais (Rindv)
-        total_rindv = sum(modelos_clientes_rindv)
-
-        # Calcular os pesos de agregação baseados nas rindv's
-        pesos = [rindv / total_rindv for rindv in modelos_clientes_rindv]
-
-        # Atualizar os parâmetros do modelo global com a média ponderada
-        with torch.no_grad():
-            for i, param_global in enumerate(self.modelo_global.parameters()):
-                param_medio = torch.zeros_like(param_global)
-                for j, peso in enumerate(pesos):
-                    cliente_params = list(modelos_clientes[j].parameters())[i].data
-                    param_medio += peso * cliente_params
-                param_global.copy_(param_medio)
-
-    
     # def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global, modelos_clientes_rindv, G):
     
     #     avaliacoes_np = avaliacoes.numpy()
@@ -253,8 +308,8 @@ class ServidorFedRecSys:
 
 
 def converter_tuplas_para_dataframe(tuplas, numero_de_usuarios, numero_de_itens):
-    print("converter_tuplas_para_dataframe :: tuplas")
-    print(tuplas)
+    # print("converter_tuplas_para_dataframe :: tuplas")
+    # print(tuplas)
     df = pd.DataFrame(columns=range(numero_de_itens), index=range(numero_de_usuarios))
     for tupla in tuplas:
         user_id, item_id, rating = tupla
@@ -266,21 +321,22 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
     print(f"\nMÉTODO DE AGREGAÇÃO :: {metodo_agregacao}")
 
     servidor = ServidorFedRecSys()
+    print("\nSERVIDOR INICIANDO MODELO")
     servidor.iniciar_modelo(dataset)
-
+    print("\nSERVIDOR TREINANDO O MODELO")
     servidor.treinar_modelo(learning_rate=learning_rate, epochs=epochs, batch_size=32, verbose=1)
     
-    print("servidor.avaliacoes_inicial")
-    print(servidor.avaliacoes_inicial)
+    # print("servidor.avaliacoes_inicial")
+    # print(servidor.avaliacoes_inicial)
 
-    print("servidor.numero_de_usuarios")
-    print(servidor.numero_de_usuarios)
+    # print("servidor.numero_de_usuarios")
+    # print(servidor.numero_de_usuarios)
 
-    print("servidor.numero_de_itens")
-    print(servidor.numero_de_itens)
+    # print("servidor.numero_de_itens")
+    # print(servidor.numero_de_itens)
 
-    print("servidor.redomendacoes")
-    print(servidor.modelo_global.predict_all())
+    # print("servidor.redomendacoes")
+    # print(servidor.modelo_global.predict_all())
 
     print(f"INSTANCIANDO CLIENTES LOCAIS")
     clientes = []
@@ -299,99 +355,96 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
     #     servidor.avaliacoes_final_tensor = None
         
         for cliente in clientes:
-            # print(f"Cliente {cliente.id} :: Adicionando Avaliações e Treinando")
+            print(f"Cliente {cliente.id} :: Adicionando Avaliações e Treinando")
+            print("cliente.adicionar_novas_avaliacoes")
+            
+            # cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
 
-            cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
-
-    #         if cliente.id < 15:
-    #             cliente.adicionar_novas_avaliacoes(10, False)
-    #         else:
-    #             cliente.adicionar_novas_avaliacoes(1, False)
+            if cliente.id < 15:
+                cliente.adicionar_novas_avaliacoes(10, False)
+            else:
+                cliente.adicionar_novas_avaliacoes(1, False)
+            
+            print("cliente.treinar_modelo")
             cliente.treinar_modelo(learning_rate=learning_rate, epochs=epochs, batch_size=32, verbose=1)
 
-            print(f"cliente.modelo_loss {cliente.modelo_loss}")
-            print(f"cliente.modelo_rindv {cliente.modelo_loss_indv}")
+            # print(f"cliente.modelo_loss {cliente.modelo_loss}")
+            # print(f"cliente.modelo_rindv {cliente.modelo_loss_indv}")
 
+            print("servidor.adicionar_avaliacoes_cliente")
             servidor.modelos_locais.append(cliente.modelo)
             servidor.modelos_locais_loss.append(cliente.modelo_loss)
             servidor.modelos_locais_loss_indv.append(cliente.modelo_loss_indv)
             servidor.adicionar_avaliacoes_cliente(copy.deepcopy(cliente.avaliacoes_locais))
             
-            print("cliente.avaliacoes_locais")
-            print(cliente.avaliacoes_locais)
-
+        print("servidor.agregar_modelos_locais_ao_global")
         if metodo_agregacao == 'ma':
             servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos(servidor.modelos_locais)
         elif metodo_agregacao == 'mp_loss':
             servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss(servidor.modelos_locais, servidor.modelos_locais_loss)
-        elif metodo_agregacao == 'mp_rindv':
+        elif metodo_agregacao == 'mp_loss_indv':
             servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(servidor.modelos_locais, servidor.modelos_locais_loss_indv)
-
-    # with torch.no_grad():
-    #         recomendacoes_tensor = servidor.modelo_global(servidor.avaliacoes_final_tensor)
+        elif metodo_agregacao == 'nao_federado':
+            servidor.treinar_modelo() # Considerando as novas avaliações dos clientes locais
 
         avaliacoes_df = converter_tuplas_para_dataframe(servidor.avaliacoes, servidor.numero_de_usuarios, servidor.numero_de_itens)
         recomendacoes_df = servidor.modelo_global.predict_all()
+        omega = ~avaliacoes_df.isnull() 
+        
+        print("=== MEDIDAS DE JUSTIÇA ===")
 
-        print("avaliacoes_df")
-        print(avaliacoes_df)
+        polarization = Polarization()
+        Rpol = polarization.evaluate(recomendacoes_df)
 
-        print("recomendacoes_df")
-        print(recomendacoes_df)
+        ilv = IndividualLossVariance(avaliacoes_df, omega, 1) #axis = 1 (0 rows e 1 columns)
+        Rindv = ilv.evaluate(recomendacoes_df)
 
+        glv = GroupLossVariance(avaliacoes_df, omega, G, 1) #axis = 1 (0 rows e 1 columns)
+        Rgrp = glv.evaluate(recomendacoes_df)
+
+        rmse = RMSE(avaliacoes_df, omega)
+        result_rmse = rmse.evaluate(recomendacoes_df)
+
+        print(f"Método de Agregação {metodo_agregacao} ")
+        print(f"Polarization (Rpol) : {Rpol:.9f}")
+        print(f"Individual Loss Variance (Rindv) : {Rindv:.9f}")
+        print(f"Group Loss Variance (Rgrp) : {Rgrp:.9f}")
+        print(f'RMSE : {result_rmse:.9f}')
+
+
+        # Defina o nome do arquivo onde deseja salvar as saídas
+        output_file = "resultados.txt"
+
+        # Redirecione a saída dos prints para um arquivo txt
+        with open(output_file, "a") as file:
             
+            print(f"Método de Agregação {metodo_agregacao} ", file=file)
+            print(f"Polarization (Rpol) : {Rpol:.9f}", file=file)
+            print(f"Individual Loss Variance (Rindv) : {Rindv:.9f}", file=file)
+            print(f"Group Loss Variance (Rgrp) : {Rgrp:.9f}", file=file)
+            print(f'RMSE : {result_rmse:.9f}', file=file)
+            print(f'\n', file=file)
 
-    # # print("servidor.avaliacoes_final_tensor")
-    # # print(servidor.avaliacoes_final_tensor)
 
-    # # print("recomendacoes_final_01_ma_tensor")
-    # # print(recomendacoes_final_01_ma_tensor)
-
-    # print("=== MEDIDAS DE JUSTIÇA ===")
-
-    # avaliacoes = servidor.avaliacoes_final_tensor.numpy()
-    # avaliacoes_df = pd.DataFrame(avaliacoes)
-
-    # recomendacoes_np = recomendacoes_tensor.numpy()
-    # recomendacoes_df = pd.DataFrame(recomendacoes_np)
-
-    # omega = (avaliacoes_df != 0)  
-
-    # polarization = Polarization()
-    # Rpol = polarization.evaluate(recomendacoes_df)
-
-    # ilv = IndividualLossVariance(avaliacoes_df, omega, 1) #axis = 1 (0 rows e 1 columns)
-    # Rindv = ilv.evaluate(recomendacoes_df)
-
-    # glv = GroupLossVariance(avaliacoes_df, omega, G, 1) #axis = 1 (0 rows e 1 columns)
-    # Rgrp = glv.evaluate(recomendacoes_df)
-
-    # rmse = RMSE(avaliacoes_df, omega)
-    # result_rmse = rmse.evaluate(recomendacoes_df)
-
-    # print(f"Polarization (Rpol) : {Rpol:.9f}")
-    # print(f"Individual Loss Variance (Rindv) : {Rindv:.9f}")
-    # print(f"Group Loss Variance (Rgrp) : {Rgrp:.9f}")
-    # print(f'RMSE : {result_rmse:.9f}')
-
-    # avaliacoes_df.to_excel(f"{dataset}-avaliacoes_df-{metodo_agregacao}.xlsx", index=False)
-    # recomendacoes_df.to_excel(f"{dataset}-recomendacoes_df-{metodo_agregacao}.xlsx", index=False)
+        avaliacoes_df.to_excel(f"_xls/{dataset}-avaliacoes_df-{metodo_agregacao}.xlsx", index=False)
+        recomendacoes_df.to_excel(f"_xls/{dataset}-recomendacoes_df-{metodo_agregacao}.xlsx", index=False)
 
 
 
-dataset='X-u5-i10_semindices.xlsx'
-G = {1: list(range(0, 2)), 2: list(range(2, 5))}
+# dataset='X-u5-i10_semindices.xlsx'
+# G = {1: list(range(0, 2)), 2: list(range(2, 5))}
 
-# dataset='X.xlsx'
-# G = {1: list(range(0, 15)), 2: list(range(15, 300))}
+dataset='X.xlsx'
+G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 
-rounds=1
-epochs=2
+rounds=5
+epochs=10
 learning_rate=0.02
 print(f"\nFedFairRecSys")
 iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='ma')
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss')
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_rindv')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss_indv')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='nao_federado')
 
 
 
