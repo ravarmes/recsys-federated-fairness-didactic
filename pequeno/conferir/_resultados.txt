@@ -1,0 +1,17 @@
+MÉTODO DE AGREGAÇÃO :: ma
+INSTANCIANDO CLIENTES LOCAIS
+TREINANDO CLIENTES LOCAIS
+=== MEDIDAS DE JUSTIÇA ===
+Polarization (Rpol) : 0.206534699
+Individual Loss Variance (Rindv) : 0.116114102
+Group Loss Variance (Rgrp) : 0.019075684
+RMSE : 1.071796775
+
+MÉTODO DE AGREGAÇÃO :: mp_loss
+INSTANCIANDO CLIENTES LOCAIS
+TREINANDO CLIENTES LOCAIS
+=== MEDIDAS DE JUSTIÇA ===
+Polarization (Rpol) : 0.548712134
+Individual Loss Variance (Rindv) : 0.236052185
+Group Loss Variance (Rgrp) : 0.109958626
+RMSE : 0.938860297

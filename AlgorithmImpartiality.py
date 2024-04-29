@@ -109,10 +109,10 @@ class AlgorithmImpartiality():
         X_est = X_est.clip(lower=1, upper=5)
         return X_est
     
-    def losses_to_Z(list_losses, n_users = 300):
+    def losses_to_Z(list_losses):
         Z = []
         linha = []
-        for i in range (0, n_users):
+        for i in range (0, len(list_losses)):
             for losses in list_losses:
                 linha.append(losses.values[i])
             Z.append(linha.copy())
