@@ -1,28 +1,28 @@
 Método de Agregação ma 
-Polarization (Rpol) : 0.000000868
-Individual Loss Variance (Rindv) : 0.187184264
-Group Loss Variance (Rgrp) : 0.001774018
-RMSE : 1.210602630
+Polarization (Rpol) : 0.000008547
+Individual Loss Variance (Rindv) : 0.183344301
+Group Loss Variance (Rgrp) : 0.001878482
+RMSE : 1.219002504
 
 
-Método de Agregação ma 
-Polarization (Rpol) : 0.000002404
-Individual Loss Variance (Rindv) : 0.186199612
-Group Loss Variance (Rgrp) : 0.001807670
-RMSE : 1.212726769
+Método de Agregação mp_loss 
+Polarization (Rpol) : 0.000007703
+Individual Loss Variance (Rindv) : 0.183341381
+Group Loss Variance (Rgrp) : 0.001878671
+RMSE : 1.219003887
 
 
-Método de Agregação ma 
-Polarization (Rpol) : 0.000003777
-Individual Loss Variance (Rindv) : 0.185228212
-Group Loss Variance (Rgrp) : 0.001835773
-RMSE : 1.214834198
+Método de Agregação mp_loss_indv 
+Polarization (Rpol) : 0.000006900
+Individual Loss Variance (Rindv) : 0.183340436
+Group Loss Variance (Rgrp) : 0.001878118
+RMSE : 1.219005330
 
 
-Método de Agregação ma 
-Polarization (Rpol) : 0.000005375
-Individual Loss Variance (Rindv) : 0.184277418
-Group Loss Variance (Rgrp) : 0.001859416
-RMSE : 1.216927246
+Método de Agregação nao_federado 
+Polarization (Rpol) : 0.015010287
+Individual Loss Variance (Rindv) : 0.107457389
+Group Loss Variance (Rgrp) : 0.000365011
+RMSE : 1.091012790
 
 

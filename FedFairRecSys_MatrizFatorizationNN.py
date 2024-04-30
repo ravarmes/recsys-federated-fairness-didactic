@@ -18,7 +18,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from AlgorithmUserFairness import RMSE, Polarization, IndividualLossVariance, GroupLossVariance
-from AlgorithmImpartiality import AlgorithmImpartiality
+# from AlgorithmImpartiality import AlgorithmImpartiality
 
 class MatrixFactorizationNN(tf.keras.Model):
     def __init__(self, num_users, num_items, embedding_dim):
@@ -387,47 +387,47 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
         elif metodo_agregacao == 'nao_federado':
             servidor.treinar_modelo() # Considerando as novas avaliações dos clientes locais
 
-        avaliacoes_df = converter_tuplas_para_dataframe(servidor.avaliacoes, servidor.numero_de_usuarios, servidor.numero_de_itens)
-        recomendacoes_df = servidor.modelo_global.predict_all()
-        omega = ~avaliacoes_df.isnull() 
+    avaliacoes_df = converter_tuplas_para_dataframe(servidor.avaliacoes, servidor.numero_de_usuarios, servidor.numero_de_itens)
+    recomendacoes_df = servidor.modelo_global.predict_all()
+    omega = ~avaliacoes_df.isnull() 
+    
+    print("=== MEDIDAS DE JUSTIÇA ===")
+
+    polarization = Polarization()
+    Rpol = polarization.evaluate(recomendacoes_df)
+
+    ilv = IndividualLossVariance(avaliacoes_df, omega, 1) #axis = 1 (0 rows e 1 columns)
+    Rindv = ilv.evaluate(recomendacoes_df)
+
+    glv = GroupLossVariance(avaliacoes_df, omega, G, 1) #axis = 1 (0 rows e 1 columns)
+    Rgrp = glv.evaluate(recomendacoes_df)
+
+    rmse = RMSE(avaliacoes_df, omega)
+    result_rmse = rmse.evaluate(recomendacoes_df)
+
+    print(f"Método de Agregação {metodo_agregacao} ")
+    print(f"Polarization (Rpol) : {Rpol:.9f}")
+    print(f"Individual Loss Variance (Rindv) : {Rindv:.9f}")
+    print(f"Group Loss Variance (Rgrp) : {Rgrp:.9f}")
+    print(f'RMSE : {result_rmse:.9f}')
+
+
+    # Defina o nome do arquivo onde deseja salvar as saídas
+    output_file = "resultados.txt"
+
+    # Redirecione a saída dos prints para um arquivo txt
+    with open(output_file, "a") as file:
         
-        print("=== MEDIDAS DE JUSTIÇA ===")
-
-        polarization = Polarization()
-        Rpol = polarization.evaluate(recomendacoes_df)
-
-        ilv = IndividualLossVariance(avaliacoes_df, omega, 1) #axis = 1 (0 rows e 1 columns)
-        Rindv = ilv.evaluate(recomendacoes_df)
-
-        glv = GroupLossVariance(avaliacoes_df, omega, G, 1) #axis = 1 (0 rows e 1 columns)
-        Rgrp = glv.evaluate(recomendacoes_df)
-
-        rmse = RMSE(avaliacoes_df, omega)
-        result_rmse = rmse.evaluate(recomendacoes_df)
-
-        print(f"Método de Agregação {metodo_agregacao} ")
-        print(f"Polarization (Rpol) : {Rpol:.9f}")
-        print(f"Individual Loss Variance (Rindv) : {Rindv:.9f}")
-        print(f"Group Loss Variance (Rgrp) : {Rgrp:.9f}")
-        print(f'RMSE : {result_rmse:.9f}')
+        print(f"Método de Agregação {metodo_agregacao} ", file=file)
+        print(f"Polarization (Rpol) : {Rpol:.9f}", file=file)
+        print(f"Individual Loss Variance (Rindv) : {Rindv:.9f}", file=file)
+        print(f"Group Loss Variance (Rgrp) : {Rgrp:.9f}", file=file)
+        print(f'RMSE : {result_rmse:.9f}', file=file)
+        print(f'\n', file=file)
 
 
-        # Defina o nome do arquivo onde deseja salvar as saídas
-        output_file = "resultados.txt"
-
-        # Redirecione a saída dos prints para um arquivo txt
-        with open(output_file, "a") as file:
-            
-            print(f"Método de Agregação {metodo_agregacao} ", file=file)
-            print(f"Polarization (Rpol) : {Rpol:.9f}", file=file)
-            print(f"Individual Loss Variance (Rindv) : {Rindv:.9f}", file=file)
-            print(f"Group Loss Variance (Rgrp) : {Rgrp:.9f}", file=file)
-            print(f'RMSE : {result_rmse:.9f}', file=file)
-            print(f'\n', file=file)
-
-
-        avaliacoes_df.to_excel(f"_xls/{dataset}-avaliacoes_df-{metodo_agregacao}.xlsx", index=False)
-        recomendacoes_df.to_excel(f"_xls/{dataset}-recomendacoes_df-{metodo_agregacao}.xlsx", index=False)
+    avaliacoes_df.to_excel(f"_xls/{dataset}-avaliacoes_df-{metodo_agregacao}.xlsx", index=False)
+    recomendacoes_df.to_excel(f"_xls/{dataset}-recomendacoes_df-{metodo_agregacao}.xlsx", index=False)
 
 
 
