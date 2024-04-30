@@ -18,6 +18,13 @@ class AlgorithmImpartiality():
             print("x: ", x)
             list_X_est.append(self.get_X_est4(X_est.copy()))
         return list_X_est
+    
+    def evaluate_federated(self, X_est, list_dif_mean, list_dif_var, n):
+        list_X_est = []
+        for x in range(0, n):
+            print("x: ", x)
+            list_X_est.append(self.get_X_est2_federated(X_est.copy(), list_dif_mean, list_dif_var))
+        return list_X_est
         
     def get_differences_means(self, X_est):
         X = self.X
@@ -109,6 +116,25 @@ class AlgorithmImpartiality():
         X_est = X_est.clip(lower=1, upper=5)
         return X_est
     
+    def get_X_est2_federated(self, X_est, list_dif_mean, list_dif_var):
+        # print("list_dif_mean: ", list_dif_mean)
+        # print("list_dif_var: ", list_dif_var)
+        print(f"get_X_est2_federated :: len(X_est.index) {len(X_est.index)}")
+        print(f"get_X_est2_federated :: len(X_est.columns) {len(X_est.columns)}")
+        for i in range(0, len(X_est.index)):
+            #var_norm = 16.0*list_dif_var[i]/4.0
+            var_norm = list_dif_var[i]/4.0
+            #print("i: ", i, " - var_norm: ", var_norm)
+            for j in range(0, len(X_est.columns)):
+                if (list_dif_mean[i] > 0):
+                    value = X_est.iloc[i, j] + random.uniform(0, var_norm)
+                else:
+                    value = X_est.iloc[i, j] + random.uniform(var_norm, 0)
+                value = 1 if value < 1 else value
+                value = 5 if value > 5 else value
+                X_est.iloc[i, j] = value
+        return X_est
+    
     def losses_to_Z(list_losses):
         Z = []
         linha = []
@@ -120,8 +146,18 @@ class AlgorithmImpartiality():
         return Z
 
     def matrices_Zs(Z, G): # return a Z matrix for each group
+        
+        print("def matrices_Zs :: Z")
+        print(Z)
+        
+        print("def matrices_Zs :: G")
+        print(G)
+
         list_Zs = []
+        print("def matrices_Zs :: group in G")
         for group in G: # G = {1: [1,2], 2: [3,4,5]}
+            print("group")
+            print(group)
             Z_ = []
             list_users = G[group]
             for user in list_users:

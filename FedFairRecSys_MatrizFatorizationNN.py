@@ -18,7 +18,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from AlgorithmUserFairness import RMSE, Polarization, IndividualLossVariance, GroupLossVariance
-# from AlgorithmImpartiality import AlgorithmImpartiality
+from AlgorithmImpartiality import AlgorithmImpartiality
 
 class MatrixFactorizationNN(tf.keras.Model):
     def __init__(self, num_users, num_items, embedding_dim):
@@ -65,6 +65,7 @@ class ClienteFedRecSys:
         self.avaliacoes_locais = avaliacoes_locais
         self.modelo_loss = None
         self.modelo_loss_indv = None
+        self.modelo_mean_indv = None
 
         self.X_train = None
         self.y_train = None
@@ -118,9 +119,11 @@ class ClienteFedRecSys:
 
         # Calcular a perda individual para o usuário específico
         loss_usuario_especifico = 0
+        mean_usuario_especifico = 0
         for i, (_, _, rating) in enumerate(self.avaliacoes_locais):
             prediction = predictions[i]
             loss_usuario_especifico += (rating - prediction) ** 2
+            mean_usuario_especifico += (rating - prediction)
 
         # Calcular o número total de avaliações do usuário específico
         num_avaliacoes_usuario_especifico = len(self.avaliacoes_locais)
@@ -128,6 +131,10 @@ class ClienteFedRecSys:
         # Calcular a perda individual média para o usuário específico
         modelo_loss_indv_usuario_especifico = loss_usuario_especifico / num_avaliacoes_usuario_especifico
         self.modelo_loss_indv = modelo_loss_indv_usuario_especifico
+
+        # Calcular a diferença média individual para o usuário específico
+        modelo_mean_indv_usuario_especifico = mean_usuario_especifico / num_avaliacoes_usuario_especifico
+        self.modelo_mean_indv = modelo_mean_indv_usuario_especifico
 
     # MÉTDO FUNCIONANDO CORRETAMENTE
     # def treinar_modelo(self, learning_rate=0.02, epochs=2, batch_size=32, verbose=1):
@@ -176,6 +183,7 @@ class ServidorFedRecSys:
         self.modelos_locais = []
         self.modelos_locais_loss = []
         self.modelos_locais_loss_indv = []
+        self.modelos_locais_mean_indv = []
         self.numero_de_usuarios = None
         self.numero_de_itens = None
         self.avaliacoes_inicial = None
@@ -242,7 +250,7 @@ class ServidorFedRecSys:
         self.modelo_global.set_weights(novos_pesos)
 
     
-    def agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(self, modelos_clientes, modelos_clientes_loss_indv):
+    def agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv(self, modelos_clientes, modelos_clientes_loss_indv):
         total_perdas = sum(modelos_clientes_loss_indv)
         pesos = [perda / total_perdas for perda in modelos_clientes_loss_indv]
         pesos_globais = self.modelo_global.get_weights()
@@ -277,7 +285,7 @@ class ServidorFedRecSys:
     #     self.modelo_global.set_weights(novos_pesos)
 
 
-    # def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(modelo_global, modelos_clientes_rindv, G):
+    # def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(self, modelo_global, modelos_clientes_loss_indv, G):
     
     #     avaliacoes_np = avaliacoes.numpy()
     #     avaliacoes_df = pd.DataFrame(avaliacoes_np)
@@ -306,6 +314,36 @@ class ServidorFedRecSys:
     #     recomendacoes_fairness_np = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) # recomendações com justiça
     #     return recomendacoes_fairness_np
 
+    def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(self, modelo_global, G):
+    
+        avaliacoes_df = modelo_global.predict_all()
+        omega = ~avaliacoes_df.isnull() 
+
+        # print("avaliacoes_df")
+        # print(avaliacoes_df)
+
+        recomendacoes_df = avaliacoes_df
+
+        ilv = IndividualLossVariance(avaliacoes_df, omega, 1)
+
+        algorithmImpartiality_01_ma_np = AlgorithmImpartiality(avaliacoes_df, omega, 1)
+        list_X_est = algorithmImpartiality_01_ma_np.evaluate_federated(recomendacoes_df, self.modelos_locais_mean_indv, self.modelos_locais_loss_indv, 5) # calculates a list of h estimated matrices => h = 5
+
+        # print("list_X_est")
+        # print(list_X_est)
+
+        list_losses = []
+        for X_est in list_X_est:
+            losses = ilv.get_losses(X_est)
+            list_losses.append(losses)
+
+        # print("list_losses")
+        # print(list_losses)
+
+        Z = AlgorithmImpartiality.losses_to_Z(list_losses)
+        list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
+        recomendacoes_fairness_np = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) # recomendações com justiça
+        return recomendacoes_fairness_np
 
 def converter_tuplas_para_dataframe(tuplas, numero_de_usuarios, numero_de_itens):
     # print("converter_tuplas_para_dataframe :: tuplas")
@@ -352,6 +390,8 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
         servidor.modelos_locais = []
         servidor.modelos_locais_loss = []
         servidor.modelos_locais_loss_indv = []
+        servidor.modelos_locais_mean_indv = []
+        
     #     servidor.avaliacoes_final_tensor = None
         
         for cliente in clientes:
@@ -375,6 +415,7 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
             servidor.modelos_locais.append(cliente.modelo)
             servidor.modelos_locais_loss.append(cliente.modelo_loss)
             servidor.modelos_locais_loss_indv.append(cliente.modelo_loss_indv)
+            servidor.modelos_locais_mean_indv.append(cliente.modelo_mean_indv)
             servidor.adicionar_avaliacoes_cliente(copy.deepcopy(cliente.avaliacoes_locais))
             
         print("servidor.agregar_modelos_locais_ao_global")
@@ -383,7 +424,11 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
         elif metodo_agregacao == 'mp_loss':
             servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss(servidor.modelos_locais, servidor.modelos_locais_loss)
         elif metodo_agregacao == 'mp_loss_indv':
-            servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(servidor.modelos_locais, servidor.modelos_locais_loss_indv)
+            servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv(servidor.modelos_locais, servidor.modelos_locais_loss_indv)
+        elif metodo_agregacao == 'ma_fair':
+            servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos(servidor.modelos_locais)
+            servidor.aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(servidor.modelo_global, G)
+
         elif metodo_agregacao == 'nao_federado':
             servidor.treinar_modelo() # Considerando as novas avaliações dos clientes locais
 
@@ -418,6 +463,7 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
     # Redirecione a saída dos prints para um arquivo txt
     with open(output_file, "a") as file:
         
+        print(f"Round {rounds} - Epochs {epochs} -  Learning Rate {learning_rate}", file=file)
         print(f"Método de Agregação {metodo_agregacao} ", file=file)
         print(f"Polarization (Rpol) : {Rpol:.9f}", file=file)
         print(f"Individual Loss Variance (Rindv) : {Rindv:.9f}", file=file)
@@ -437,14 +483,18 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
 dataset='X.xlsx'
 G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 
-rounds=5
-epochs=10
-learning_rate=0.02
+rounds=1 
+epochs=1 
+learning_rate=0.1
+# rounds= 5
+# epochs= 10
+# learning_rate=0.02
 print(f"\nFedFairRecSys")
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='ma')
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss')
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss_indv')
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='nao_federado')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='ma')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss_indv')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='ma_fair')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='nao_federado')
 
 
 
