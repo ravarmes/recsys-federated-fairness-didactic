@@ -69,9 +69,6 @@ class ClienteFedRecSys:
 
         self.X_train = None
         self.y_train = None
-
-        # optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        # self.modelo.compile(optimizer=optimizer, loss='mean_squared_error')
         
 
     def adicionar_novas_avaliacoes(self, quantidade, aleatorio=False):
@@ -106,9 +103,9 @@ class ClienteFedRecSys:
 
 
 
-    def treinar_modelo(self, epochs=2, batch_size=32, verbose=1):
-        # optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        # self.modelo.compile(optimizer=optimizer, loss='mean_squared_error')
+    def treinar_modelo(self, learning_rate=0.02, epochs=2, batch_size=32, verbose=1):
+        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+        self.modelo.compile(optimizer=optimizer, loss='mean_squared_error')
         history = self.modelo.fit(self.X_train, self.y_train, epochs=epochs, batch_size=batch_size, verbose=verbose)
     
         # Armazenar a perda do modelo após o treinamento
@@ -160,7 +157,7 @@ class ServidorFedRecSys:
         self.y_train = None
 
     
-    def iniciar_modelo(self, arquivo_excel, learning_rate):
+    def iniciar_modelo(self, arquivo_excel):
         df = pd.read_excel(arquivo_excel, index_col=0)  # Especifica a primeira coluna como índice
         dados = df.fillna(0).values  # Preenche valores nulos com 0 e obtém os valores como array
         X, y = np.nonzero(dados)
@@ -177,14 +174,11 @@ class ServidorFedRecSys:
         
         embedding_dim = 32
         self.modelo_global = MatrixFactorizationNN(self.numero_de_usuarios, self.numero_de_itens, embedding_dim)
-        
-        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        self.modelo_global.compile(optimizer=optimizer, loss='mean_squared_error')
 
         
-    def treinar_modelo(self, epochs=2, batch_size=32, verbose=1):
-        # optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        # self.modelo_global.compile(optimizer=optimizer, loss='mean_squared_error')
+    def treinar_modelo(self, learning_rate=0.02, epochs=2, batch_size=32, verbose=1):
+        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+        self.modelo_global.compile(optimizer=optimizer, loss='mean_squared_error')
         self.modelo_global.fit(self.X_train, self.y_train, epochs=epochs, batch_size=batch_size, verbose=verbose)
 
 
@@ -284,9 +278,9 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
 
     servidor = ServidorFedRecSys()
     print("\nSERVIDOR INICIANDO MODELO")
-    servidor.iniciar_modelo(dataset, learning_rate)
+    servidor.iniciar_modelo(dataset)
     print("\nSERVIDOR TREINANDO O MODELO")
-    servidor.treinar_modelo(epochs, batch_size=32, verbose=1)
+    servidor.treinar_modelo(learning_rate=learning_rate, epochs=epochs, batch_size=32, verbose=1)
     
     # print("servidor.avaliacoes_inicial")
     # print(servidor.avaliacoes_inicial)
@@ -324,11 +318,13 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
             
             # cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
 
-            cliente.adicionar_novas_avaliacoes(10, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
-
+            if cliente.id < 15:
+                cliente.adicionar_novas_avaliacoes(10, False)
+            else:
+                cliente.adicionar_novas_avaliacoes(2, False)
             
             print("cliente.treinar_modelo")
-            cliente.treinar_modelo(epochs, batch_size=32, verbose=1)
+            cliente.treinar_modelo(learning_rate=learning_rate, epochs=epochs, batch_size=32, verbose=1)
 
             # print(f"cliente.modelo_loss {cliente.modelo_loss}")
             # print(f"cliente.modelo_rindv {cliente.modelo_loss_indv}")
@@ -352,7 +348,7 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
             servidor.aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(G)
 
         elif metodo_agregacao == 'nao_federado':
-            servidor.treinar_modelo(epochs) # Considerando as novas avaliações dos clientes locais
+            servidor.treinar_modelo() # Considerando as novas avaliações dos clientes locais
 
     avaliacoes_df = converter_tuplas_para_dataframe(servidor.avaliacoes, servidor.numero_de_usuarios, servidor.numero_de_itens)
     recomendacoes_df = servidor.modelo_global.predict_all()
@@ -419,12 +415,12 @@ G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 # epochs= 10
 # learning_rate=0.02
 
-rounds= 5
-epochs= 20
-learning_rate=0.01
+rounds= 1
+epochs= 1
+learning_rate=0.02
 
 print(f"\nFedFairRecSys")
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='ma')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='ma')
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss')
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss_indv')
 iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='ma_fair')
