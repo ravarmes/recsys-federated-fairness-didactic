@@ -117,10 +117,10 @@ class AlgorithmImpartiality():
         return X_est
     
     def get_X_est2_federated(self, X_est, list_dif_mean, list_dif_var):
-        # print("list_dif_mean: ", list_dif_mean)
-        # print("list_dif_var: ", list_dif_var)
-        print(f"get_X_est2_federated :: len(X_est.index) {len(X_est.index)}")
-        print(f"get_X_est2_federated :: len(X_est.columns) {len(X_est.columns)}")
+        # # print("list_dif_mean: ", list_dif_mean)
+        # # print("list_dif_var: ", list_dif_var)
+        # print(f"get_X_est2_federated :: len(X_est.index) {len(X_est.index)}")
+        # print(f"get_X_est2_federated :: len(X_est.columns) {len(X_est.columns)}")
         for i in range(0, len(X_est.index)):
             #var_norm = 16.0*list_dif_var[i]/4.0
             var_norm = list_dif_var[i]/4.0
@@ -138,7 +138,7 @@ class AlgorithmImpartiality():
     def losses_to_Z(list_losses):
         Z = []
         linha = []
-        for i in range (0, len(list_losses)):
+        for i in range (0, len(list_losses[0])):
             for losses in list_losses:
                 linha.append(losses.values[i])
             Z.append(linha.copy())
@@ -146,18 +146,8 @@ class AlgorithmImpartiality():
         return Z
 
     def matrices_Zs(Z, G): # return a Z matrix for each group
-        
-        print("def matrices_Zs :: Z")
-        print(Z)
-        
-        print("def matrices_Zs :: G")
-        print(G)
-
         list_Zs = []
-        print("def matrices_Zs :: group in G")
         for group in G: # G = {1: [1,2], 2: [3,4,5]}
-            print("group")
-            print(group)
             Z_ = []
             list_users = G[group]
             for user in list_users:

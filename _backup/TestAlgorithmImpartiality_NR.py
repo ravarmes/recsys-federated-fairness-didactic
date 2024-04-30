@@ -104,9 +104,18 @@ for X_est in list_X_est:
     losses = ilv.get_losses(X_est)
     list_losses.append(losses)
 
+print("list_losses")
+print(list_losses)
+
 Z = AlgorithmImpartiality.losses_to_Z(list_losses, n_users)
 
+print("Z")
+print(Z)
+
 list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G_index)
+
+print("list_Zs")
+print(list_Zs)
 
 # Calculate the recommendation matrix optimized by gurobi
 X_gurobi = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs)

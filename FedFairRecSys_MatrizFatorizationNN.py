@@ -337,9 +337,6 @@ class ServidorFedRecSys:
             losses = ilv.get_losses(X_est)
             list_losses.append(losses)
 
-        # print("list_losses")
-        # print(list_losses)
-
         Z = AlgorithmImpartiality.losses_to_Z(list_losses)
         list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
         recomendacoes_fairness_np = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) # recomendações com justiça
@@ -403,7 +400,7 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
             if cliente.id < 15:
                 cliente.adicionar_novas_avaliacoes(10, False)
             else:
-                cliente.adicionar_novas_avaliacoes(1, False)
+                cliente.adicionar_novas_avaliacoes(2, False)
             
             print("cliente.treinar_modelo")
             cliente.treinar_modelo(learning_rate=learning_rate, epochs=epochs, batch_size=32, verbose=1)
@@ -483,18 +480,24 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
 dataset='X.xlsx'
 G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 
-rounds=1 
-epochs=1 
-learning_rate=0.1
+# rounds=1 
+# epochs=1 
+# learning_rate=0.1
+
 # rounds= 5
 # epochs= 10
 # learning_rate=0.02
+
+rounds= 3
+epochs= 5
+learning_rate=0.02
+
 print(f"\nFedFairRecSys")
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='ma')
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss')
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss_indv')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='ma')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss_indv')
 iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='ma_fair')
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='nao_federado')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='nao_federado')
 
 
 
