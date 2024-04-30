@@ -109,7 +109,7 @@ class ClienteFedRecSys:
         history = self.modelo.fit(self.X_train, self.y_train, epochs=epochs, batch_size=batch_size, verbose=verbose)
     
         # Armazenar a perda do modelo após o treinamento
-        self.modelo_loss = history.history['loss'][-1] 
+        self.modelo_loss = history.history['loss'][-1]
 
         # Criar um array para armazenar os inputs
         user_inputs = np.array([[usuario, item_id] for usuario, item_id, _ in self.avaliacoes_locais])
@@ -135,6 +135,44 @@ class ClienteFedRecSys:
         # Calcular a diferença média individual para o usuário específico
         modelo_mean_indv_usuario_especifico = mean_usuario_especifico / num_avaliacoes_usuario_especifico
         self.modelo_mean_indv = modelo_mean_indv_usuario_especifico
+
+    # MÉTDO FUNCIONANDO CORRETAMENTE
+    # def treinar_modelo(self, learning_rate=0.02, epochs=2, batch_size=32, verbose=1):
+    #     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    #     self.modelo.compile(optimizer=optimizer, loss='mean_squared_error')
+    #     history = self.modelo.fit(self.X_train, self.y_train, epochs=epochs, batch_size=batch_size, verbose=verbose)
+    
+    #     # Armazenar a perda do modelo após o treinamento
+    #     self.modelo_loss = history.history['loss'][-1]
+
+    #     loss_usuario = 0
+    #     for usuario, item_id, rating in self.avaliacoes_locais:
+    #         user_input = np.array([[usuario, item_id]])
+    #         prediction = self.modelo.predict(user_input)[0]
+    #         loss_usuario += (rating - prediction) ** 2
+        
+    #     num_avaliacoes = len(self.avaliacoes_locais)
+    #     self.modelo_loss_indv = loss_usuario / num_avaliacoes
+
+
+    # def treinar_modelo(self, learning_rate=0.02, epochs=2, batch_size=32, verbose=1):
+    #     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    #     self.modelo.compile(optimizer=optimizer, loss='mean_squared_error')
+    #     history = self.modelo.fit(self.X_train, self.y_train, epochs=epochs, batch_size=batch_size, verbose=verbose)
+        
+    #     self.modelo_loss = history.history['loss'][-1]
+
+    #     user_item_pairs = np.array([[usuario, item_id] for usuario, item_id, _ in self.avaliacoes_locais])
+    #     actual_ratings = np.array([rating for _, _, rating in self.avaliacoes_locais])
+
+    #     predictions = self.modelo.predict(user_item_pairs).flatten()
+        
+    #     # Calcular perda individual baseada nas predições em lote
+    #     loss_usuario = np.sum((actual_ratings - predictions) ** 2)
+        
+    #     # Calcular a perda média por avaliação
+    #     num_avaliacoes = len(self.avaliacoes_locais)
+    #     self.modelo_loss_indv = loss_usuario / num_avaliacoes
 
 
 
@@ -182,35 +220,15 @@ class ServidorFedRecSys:
         self.modelo_global.fit(self.X_train, self.y_train, epochs=epochs, batch_size=batch_size, verbose=verbose)
 
 
-    def adicionar_avaliacoes_cliente(self, avaliacoes):
-        # print(f"avaliacoes: {avaliacoes}")
-        novas_avaliacoes = []
-        for tupla in avaliacoes:
+    def adicionar_avaliacoes_cliente(self, novas_avaliacoes):
+        for tupla in novas_avaliacoes:
             if tupla not in self.avaliacoes:
                 self.avaliacoes.append(tupla)
-                novas_avaliacoes.append(tupla)
-        # print(f"adicionar_avaliacoes_cliente :: novas_avaliacoes: {novas_avaliacoes}")
-
-        novos_X = np.array([[item[0], item[1]] for item in novas_avaliacoes])
-        novos_y = np.array([item[2] for item in novas_avaliacoes])
-
-        # print("adicionar_avaliacoes_cliente :: novos_X")
-        # print(novos_X)
-
-        if self.X_train is None:
-            self.X_train = novos_X
-            self.y_train = novos_y
-        else:
-            self.X_train = np.concatenate((self.X_train, novos_X))
-            self.y_train = np.concatenate((self.y_train, novos_y))
-
-        # print("adicionar_avaliacoes_cliente :: self.X_train")
-        # print(self.X_train)
 
 
-    def agregar_modelos_locais_ao_global_media_aritmetica_pesos(self):
+    def agregar_modelos_locais_ao_global_media_aritmetica_pesos(self, modelos_clientes):
         pesos_globais = self.modelo_global.get_weights()
-        pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
+        pesos_clientes = [cliente.get_weights() for cliente in modelos_clientes]
         novos_pesos = []
         for i, _ in enumerate(pesos_globais):
             pesos_parametro = [pesos[i] for pesos in pesos_clientes]
@@ -219,11 +237,11 @@ class ServidorFedRecSys:
         self.modelo_global.set_weights(novos_pesos)
 
 
-    def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(self):
-        total_perdas = sum(self.modelos_clientes_loss)
-        pesos = [perda / total_perdas for perda in self.modelos_clientes_loss]
+    def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(self, modelos_clientes, modelos_clientes_loss):
+        total_perdas = sum(modelos_clientes_loss)
+        pesos = [perda / total_perdas for perda in modelos_clientes_loss]
         pesos_globais = self.modelo_global.get_weights()
-        pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
+        pesos_clientes = [cliente.get_weights() for cliente in modelos_clientes]
         novos_pesos = []
         for i, _ in enumerate(pesos_globais):
             pesos_parametro = [pesos[i] for pesos in pesos_clientes]
@@ -232,11 +250,11 @@ class ServidorFedRecSys:
         self.modelo_global.set_weights(novos_pesos)
 
     
-    def agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv(self):
-        total_perdas = sum(self.modelos_clientes_loss_indv)
-        pesos = [perda / total_perdas for perda in self.modelos_clientes_loss_indv]
+    def agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv(self, modelos_clientes, modelos_clientes_loss_indv):
+        total_perdas = sum(modelos_clientes_loss_indv)
+        pesos = [perda / total_perdas for perda in modelos_clientes_loss_indv]
         pesos_globais = self.modelo_global.get_weights()
-        pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
+        pesos_clientes = [cliente.get_weights() for cliente in modelos_clientes]
         novos_pesos = []
         for i, _ in enumerate(pesos_globais):
             pesos_parametro = [pesos[i] for pesos in pesos_clientes]
@@ -245,15 +263,74 @@ class ServidorFedRecSys:
         self.modelo_global.set_weights(novos_pesos)
 
 
-    def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(self, G):
+
+    # def agregar_modelos_locais_ao_global_media_aritmetica_pesos(self, modelos_clientes):
+    #     pesos_clientes = np.stack([cliente.get_weights() for cliente in modelos_clientes])
+    #     novos_pesos = np.mean(pesos_clientes, axis=0)
+    #     novos_pesos = [tf.convert_to_tensor(peso) for peso in novos_pesos]
+    #     self.modelo_global.set_weights(novos_pesos)
+
+    # def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(self, modelos_clientes, modelos_clientes_loss):
+    #     total_perdas = sum(modelos_clientes_loss)
+    #     pesos = np.array([perda / total_perdas for perda in modelos_clientes_loss])
+    #     pesos_clientes = np.array([cliente.get_weights() for cliente in modelos_clientes])
+    #     novos_pesos = np.average(pesos_clientes, axis=0, weights=pesos)
+    #     self.modelo_global.set_weights(novos_pesos)
+
+    # def agregar_modelos_locais_ao_global_media_poderada_pesos_rindv(self, modelos_clientes, modelos_clientes_loss_indv):
+    #     total_perdas = sum(modelos_clientes_loss_indv)
+    #     pesos = np.array([perda / total_perdas for perda in modelos_clientes_loss_indv])
+    #     pesos_clientes = np.array([cliente.get_weights() for cliente in modelos_clientes])
+    #     novos_pesos = np.average(pesos_clientes, axis=0, weights=pesos)
+    #     self.modelo_global.set_weights(novos_pesos)
+
+
+    # def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(self, modelo_global, modelos_clientes_loss_indv, G):
     
-        recomendacoes = self.modelo_global.predict_all()
-        omega = ~recomendacoes.isnull() 
+    #     avaliacoes_np = avaliacoes.numpy()
+    #     avaliacoes_df = pd.DataFrame(avaliacoes_np)
 
-        ilv = IndividualLossVariance(recomendacoes, omega, 1)
+    #     omega = (avaliacoes_df != 0)
 
-        algorithmImpartiality_01_ma_np = AlgorithmImpartiality(recomendacoes, omega, 1)
-        list_X_est = algorithmImpartiality_01_ma_np.evaluate_federated(recomendacoes, self.modelos_locais_mean_indv, self.modelos_locais_loss_indv, 5) # calculates a list of h estimated matrices => h = 5
+    #     num_usuarios, num_itens = avaliacoes.shape
+    #     with torch.no_grad():
+    #         recomendacoes_tensor = modelo_global(avaliacoes)
+
+    #     recomendacoes_np = recomendacoes_tensor.numpy()
+    #     recomendacoes_df = pd.DataFrame(recomendacoes_np)
+
+    #     ilv = IndividualLossVariance(avaliacoes_df, omega, 1)
+
+    #     algorithmImpartiality_01_ma_np = AlgorithmImpartiality(avaliacoes_df, omega, 1)
+    #     list_X_est = algorithmImpartiality_01_ma_np.evaluate(recomendacoes_df, 5) # calculates a list of h estimated matrices => h = 5
+
+    #     list_losses = []
+    #     for X_est in list_X_est:
+    #         losses = ilv.get_losses(X_est)
+    #         list_losses.append(losses)
+
+    #     Z = AlgorithmImpartiality.losses_to_Z(list_losses, num_usuarios)
+    #     list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
+    #     recomendacoes_fairness_np = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) # recomendações com justiça
+    #     return recomendacoes_fairness_np
+
+    def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(self, modelo_global, G):
+    
+        avaliacoes_df = modelo_global.predict_all()
+        omega = ~avaliacoes_df.isnull() 
+
+        # print("avaliacoes_df")
+        # print(avaliacoes_df)
+
+        recomendacoes_df = avaliacoes_df
+
+        ilv = IndividualLossVariance(avaliacoes_df, omega, 1)
+
+        algorithmImpartiality_01_ma_np = AlgorithmImpartiality(avaliacoes_df, omega, 1)
+        list_X_est = algorithmImpartiality_01_ma_np.evaluate_federated(recomendacoes_df, self.modelos_locais_mean_indv, self.modelos_locais_loss_indv, 5) # calculates a list of h estimated matrices => h = 5
+
+        # print("list_X_est")
+        # print(list_X_est)
 
         list_losses = []
         for X_est in list_X_est:
@@ -262,10 +339,12 @@ class ServidorFedRecSys:
 
         Z = AlgorithmImpartiality.losses_to_Z(list_losses)
         list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
-        recomendacoes_fairness = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) 
-        return recomendacoes_fairness
+        recomendacoes_fairness_np = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) # recomendações com justiça
+        return recomendacoes_fairness_np
 
 def converter_tuplas_para_dataframe(tuplas, numero_de_usuarios, numero_de_itens):
+    # print("converter_tuplas_para_dataframe :: tuplas")
+    # print(tuplas)
     df = pd.DataFrame(columns=range(numero_de_itens), index=range(numero_de_usuarios))
     for tupla in tuplas:
         user_id, item_id, rating = tupla
@@ -338,14 +417,14 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
             
         print("servidor.agregar_modelos_locais_ao_global")
         if metodo_agregacao == 'ma':
-            servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos()
+            servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos(servidor.modelos_locais)
         elif metodo_agregacao == 'mp_loss':
-            servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss()
+            servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss(servidor.modelos_locais, servidor.modelos_locais_loss)
         elif metodo_agregacao == 'mp_loss_indv':
-            servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv()
+            servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv(servidor.modelos_locais, servidor.modelos_locais_loss_indv)
         elif metodo_agregacao == 'ma_fair':
-            servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos()
-            servidor.aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(G)
+            servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos(servidor.modelos_locais)
+            servidor.aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(servidor.modelo_global, G)
 
         elif metodo_agregacao == 'nao_federado':
             servidor.treinar_modelo() # Considerando as novas avaliações dos clientes locais
@@ -353,12 +432,6 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
     avaliacoes_df = converter_tuplas_para_dataframe(servidor.avaliacoes, servidor.numero_de_usuarios, servidor.numero_de_itens)
     recomendacoes_df = servidor.modelo_global.predict_all()
     omega = ~avaliacoes_df.isnull() 
-
-    # print("\nservidor.X_train")
-    # print(servidor.X_train)
-
-    # print("\nservidor.y_train")
-    # print(servidor.y_train)
     
     print("=== MEDIDAS DE JUSTIÇA ===")
 
@@ -415,14 +488,14 @@ G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 # epochs= 10
 # learning_rate=0.02
 
-rounds= 1
-epochs= 1
+rounds= 3
+epochs= 5
 learning_rate=0.02
 
 print(f"\nFedFairRecSys")
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='ma')
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss')
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss_indv')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='ma')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='mp_loss_indv')
 iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='ma_fair')
 iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='nao_federado')
 
