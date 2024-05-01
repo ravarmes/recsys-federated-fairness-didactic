@@ -321,31 +321,29 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
         servidor.modelos_locais_loss_indv = []
         servidor.modelos_locais_mean_indv = []
         
-    #     servidor.avaliacoes_final_tensor = None
-
         if metodo_agregacao != "nao_federado":
         
             for cliente in clientes:
                 print(f"Cliente {cliente.id} :: Adicionando Avaliações e Treinando")
-                #print("cliente.adicionar_novas_avaliacoes")
+                # print("cliente.adicionar_novas_avaliacoes")
                 
                 # cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
                 cliente.adicionar_novas_avaliacoes(10, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
 
-                #print("cliente.treinar_modelo")
+                # print("cliente.treinar_modelo")
                 cliente.treinar_modelo(epochs, batch_size=32, verbose=1)
 
                 # print(f"cliente.modelo_loss {cliente.modelo_loss}")
                 # print(f"cliente.modelo_rindv {cliente.modelo_loss_indv}")
 
-                #print("servidor.adicionar_avaliacoes_cliente")
+                # print("servidor.adicionar_avaliacoes_cliente")
                 servidor.modelos_locais.append(cliente.modelo)
                 servidor.modelos_locais_loss.append(cliente.modelo_loss)
                 servidor.modelos_locais_loss_indv.append(cliente.modelo_loss_indv)
                 servidor.modelos_locais_mean_indv.append(cliente.modelo_mean_indv)
                 servidor.adicionar_avaliacoes_cliente(copy.deepcopy(cliente.avaliacoes_locais))
                 
-            #print("servidor.agregar_modelos_locais_ao_global")
+            # print("servidor.agregar_modelos_locais_ao_global")
             if metodo_agregacao == 'ma':
                 servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos()
             elif metodo_agregacao == 'mp_loss':
@@ -359,14 +357,14 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
         elif metodo_agregacao == 'nao_federado':
             for cliente in clientes:
                 print(f"Cliente {cliente.id} :: Adicionando Avaliações")
-                #print("cliente.adicionar_novas_avaliacoes")
+                # print("cliente.adicionar_novas_avaliacoes")
                 
                 # cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
                 cliente.adicionar_novas_avaliacoes(10, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
                 #print("servidor.adicionar_avaliacoes_cliente")
                 servidor.adicionar_avaliacoes_cliente(copy.deepcopy(cliente.avaliacoes_locais))
 
-            #print("servidor.treinar_modelo")
+            # print("servidor.treinar_modelo")
             servidor.treinar_modelo(epochs) # Considerando as novas avaliações dos clientes locais
 
     avaliacoes_df = converter_tuplas_para_dataframe(servidor.avaliacoes, servidor.numero_de_usuarios, servidor.numero_de_itens)
@@ -420,25 +418,23 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
 
 
 
-# dataset='X-u5-i10_semindices.xlsx'
-# G = {1: list(range(0, 2)), 2: list(range(2, 5))}
+# dataset='X.xlsx'
+# G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 
-dataset='X.xlsx'
-G = {1: list(range(0, 15)), 2: list(range(15, 300))}
-
-rounds=5 
-epochs=10 
-learning_rate=0.000174
-embedding_dim = 16
-
-# rounds= 1
-# epochs= 1
-# learning_rate=0.1
+# # Melhores Hiperparâmetros
+# rounds=5 
+# epochs=10 
+# learning_rate=0.000174
 # embedding_dim = 16
 
-# rounds= 10
-# epochs= 20
-# learning_rate=0.01
+dataset='X-u5-i10_semindices.xlsx'
+G = {1: list(range(0, 2)), 2: list(range(2, 5))}
+
+rounds= 1
+epochs= 1
+learning_rate=0.1
+embedding_dim = 16
+
 
 print(f"\nFedFairRecSys")
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma')
