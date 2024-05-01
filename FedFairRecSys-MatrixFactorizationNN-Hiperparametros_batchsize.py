@@ -30,42 +30,42 @@ class MatrixFactorizationHyperModel(HyperModel):
 
     def build(self, hp):
         model = MatrixFactorizationNN(
-            num_users=self.num_users, 
-            num_items=self.num_items, 
+            num_users=self.num_users,
+            num_items=self.num_items,
             embedding_dim=hp.Int('embedding_dim', min_value=16, max_value=128, step=16),
         )
         learning_rate = hp.Float('learning_rate', min_value=1e-4, max_value=1e-2, sampling='LOG')
         optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         model.compile(optimizer=optimizer, loss='mean_squared_error')
-        epochs = hp.Int('epochs', min_value=5, max_value=50, step=5)  # Defina o intervalo de épocas a serem testadas
+        epochs = hp.Int('epochs', min_value=5, max_value=50, step=5)
+        batch_size = hp.Choice('batch_size', values=[16, 32, 64, 128])  # Novo hiperparâmetro
+        
+        df = pd.read_excel("X.xlsx", index_col=0)
+        dados = df.fillna(0).values
+        X, y = np.nonzero(dados)
+        ratings = dados[X, y]
+        avaliacoes_tuplas = list(zip(X, y, ratings))
+
+        X_data = np.array([[usuario, item] for usuario, item, _ in avaliacoes_tuplas])
+        y_data = np.array([rating for _, _, rating in avaliacoes_tuplas])
+        X_train, X_val, y_train, y_val = train_test_split(X_data, y_data, test_size=0.2, random_state=42)
+
+        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_val, y_val))
         return model
 
 tuner = RandomSearch(
     MatrixFactorizationHyperModel(300, 1000),
-    objective='val_loss', 
-    max_trials=20, 
+    objective='val_loss',
+    max_trials=20,
     executions_per_trial=3,
     directory='model_tuning',
     project_name='MatrixFactorization'
 )
 
-df = pd.read_excel("X.xlsx", index_col=0)
-# df = pd.read_excel("X-u5-i10_semindices.xlsx", index_col=0)
-dados = df.fillna(0).values
-X, y = np.nonzero(dados)
-ratings = dados[X, y]
-avaliacoes_tuplas = list(zip(X, y, ratings))
-
-X_data = np.array([[usuario, item] for usuario, item, _ in avaliacoes_tuplas])
-y_data = np.array([rating for _, _, rating in avaliacoes_tuplas])
-
-X_train, X_val, y_train, y_val = train_test_split(X_data, y_data, test_size=0.2, random_state=42)
-
-# Realiza a busca pelo melhor modelo
-tuner.search(x=X_train, y=y_train, epochs=10, validation_data=(X_val, y_val))
+tuner.search(epochs=10, validation_data=(X_val, y_val))
 
 # Obtém os melhores hiperparâmetros
-num_trials = 5  # Número de melhores conjuntos para recuperar
+num_trials = 5
 best_hyperparameters = tuner.get_best_hyperparameters(num_trials=num_trials)
 
 # Exibe todos os valores dos hiperparâmetros para cada conjunto
@@ -73,27 +73,3 @@ for idx, hp in enumerate(best_hyperparameters):
     print(f"Conjunto {idx + 1}:")
     for key, value in hp.values.items():
         print(f"  {key}: {value}")
-
-
-# Best val_loss So Far: 1.3893487850824993
-# Total elapsed time: 00h 35m 44s
-# Conjunto 1:
-#   embedding_dim: 16
-#   learning_rate: 0.00014088057559838335
-#   epochs: 45
-# Conjunto 2:
-#   embedding_dim: 16
-#   learning_rate: 0.00015005837205825444
-#   epochs: 15
-# Conjunto 3:
-#   embedding_dim: 16
-#   learning_rate: 0.00017361131583981313
-#   epochs: 10
-# Conjunto 4:
-#   embedding_dim: 80
-#   learning_rate: 0.00011165732098945915
-#   epochs: 30
-# Conjunto 5:
-#   embedding_dim: 96
-#   learning_rate: 0.00015132308411926136
-#   epochs: 40
