@@ -45,13 +45,12 @@ tuner = RandomSearch(
     objective='val_loss', 
     max_trials=20, 
     executions_per_trial=3,
-    # max_trials=1, 
-    # executions_per_trial=1,
     directory='model_tuning',
     project_name='MatrixFactorization'
 )
 
 df = pd.read_excel("X.xlsx", index_col=0)
+# df = pd.read_excel("X-u5-i10_semindices.xlsx", index_col=0)
 dados = df.fillna(0).values
 X, y = np.nonzero(dados)
 ratings = dados[X, y]
@@ -62,6 +61,15 @@ y_data = np.array([rating for _, _, rating in avaliacoes_tuplas])
 
 X_train, X_val, y_train, y_val = train_test_split(X_data, y_data, test_size=0.2, random_state=42)
 
+# Realiza a busca pelo melhor modelo
 tuner.search(x=X_train, y=y_train, epochs=10, validation_data=(X_val, y_val))
-best_model = tuner.get_best_models(num_models=1)[0]
-best_hyperparameters = tuner.get_best_hyperparameters()[0]
+
+# Obtém os melhores hiperparâmetros
+num_trials = 5  # Número de melhores conjuntos para recuperar
+best_hyperparameters = tuner.get_best_hyperparameters(num_trials=num_trials)
+
+# Exibe todos os valores dos hiperparâmetros para cada conjunto
+for idx, hp in enumerate(best_hyperparameters):
+    print(f"Conjunto {idx + 1}:")
+    for key, value in hp.values.items():
+        print(f"  {key}: {value}")

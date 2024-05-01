@@ -411,17 +411,17 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
 dataset='X.xlsx'
 G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 
-# rounds=1 
-# epochs=1 
-# learning_rate=0.1
+rounds=1 
+epochs=5 
+learning_rate=0.2
 
 # rounds= 5
 # epochs= 10
 # learning_rate=0.02
 
-rounds= 5
-epochs= 20
-learning_rate=0.01
+# rounds= 10
+# epochs= 20
+# learning_rate=0.01
 
 print(f"\nFedFairRecSys")
 iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, metodo_agregacao='ma')

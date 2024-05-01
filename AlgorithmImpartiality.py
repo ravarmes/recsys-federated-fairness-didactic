@@ -23,7 +23,7 @@ class AlgorithmImpartiality():
         list_X_est = []
         for x in range(0, n):
             print("x: ", x)
-            list_X_est.append(self.get_X_est2_federated(X_est.copy(), list_dif_mean, list_dif_var))
+            list_X_est.append(self.get_X_est4_federated(X_est.copy(), list_dif_mean, list_dif_var))
         return list_X_est
         
     def get_differences_means(self, X_est):
@@ -133,6 +133,30 @@ class AlgorithmImpartiality():
                 value = 1 if value < 1 else value
                 value = 5 if value > 5 else value
                 X_est.iloc[i, j] = value
+        return X_est
+    
+    # Estratégia 2 otimizada (outra versão otimizada)
+    def get_X_est4_federated(self, X_est, list_dif_mean, list_dif_var):
+        list_dif_mean = self.get_differences_means(X_est)
+        list_dif_var = self.get_differences_vars(X_est) / 4.0
+        # Convertendo para arrays NumPy para operação vetorizada
+        list_dif_mean = list_dif_mean.to_numpy()
+        list_dif_var = list_dif_var.to_numpy()
+        
+        # Determinar os limites inferior e superior para a geração de valores aleatórios
+        lower_bounds = np.where(list_dif_mean[:, np.newaxis] > 0, 0, list_dif_var[:, np.newaxis])
+        upper_bounds = np.where(list_dif_mean[:, np.newaxis] > 0, list_dif_var[:, np.newaxis], 0)
+        
+        # Ajustando o caso onde o limite inferior é maior que o superior
+        # Isso aconteceria em casos onde list_dif_var[i] é negativo, o que não deveria acontecer nesta lógica, mas é um ajuste de segurança
+        lower_bounds, upper_bounds = np.minimum(lower_bounds, upper_bounds), np.maximum(lower_bounds, upper_bounds)
+
+        # Cria uma matriz de valores aleatórios dentro dos limites definidos
+        random_values = np.random.uniform(lower_bounds, upper_bounds, X_est.shape)
+        
+        # Atualiza X_est com valores aleatórios, garantindo que os valores estejam entre 1 e 5
+        X_est = X_est.add(random_values)
+        X_est = X_est.clip(lower=1, upper=5)
         return X_est
     
     def losses_to_Z(list_losses):
