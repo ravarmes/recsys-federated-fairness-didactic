@@ -23,7 +23,7 @@ class AlgorithmImpartiality():
         list_X_est = []
         for x in range(0, n):
             print("x: ", x)
-            list_X_est.append(self.get_X_est4_federated(X_est.copy(), list_dif_mean, list_dif_var))
+            list_X_est.append(self.get_X_est2_federated(X_est.copy(), list_dif_mean, list_dif_var))
         return list_X_est
         
     def get_differences_means(self, X_est):
