@@ -99,7 +99,7 @@ class AlgorithmImpartiality():
         # Convertendo para arrays NumPy para operação vetorizada
         list_dif_mean = list_dif_mean.to_numpy()
         list_dif_var = list_dif_var.to_numpy()
-        
+
         # Determinar os limites inferior e superior para a geração de valores aleatórios
         lower_bounds = np.where(list_dif_mean[:, np.newaxis] > 0, 0, list_dif_var[:, np.newaxis])
         upper_bounds = np.where(list_dif_mean[:, np.newaxis] > 0, list_dif_var[:, np.newaxis], 0)
@@ -108,6 +108,9 @@ class AlgorithmImpartiality():
         # Isso aconteceria em casos onde list_dif_var[i] é negativo, o que não deveria acontecer nesta lógica, mas é um ajuste de segurança
         lower_bounds, upper_bounds = np.minimum(lower_bounds, upper_bounds), np.maximum(lower_bounds, upper_bounds)
 
+        lower_bounds = lower_bounds.astype('float')
+        upper_bounds = upper_bounds.astype('float')
+        
         # Cria uma matriz de valores aleatórios dentro dos limites definidos
         random_values = np.random.uniform(lower_bounds, upper_bounds, X_est.shape)
         
@@ -146,6 +149,9 @@ class AlgorithmImpartiality():
         # Determinar os limites inferior e superior para a geração de valores aleatórios
         lower_bounds = np.where(list_dif_mean[:, np.newaxis] > 0, 0, list_dif_var[:, np.newaxis])
         upper_bounds = np.where(list_dif_mean[:, np.newaxis] > 0, list_dif_var[:, np.newaxis], 0)
+
+        lower_bounds = lower_bounds.astype('float')
+        upper_bounds = upper_bounds.astype('float')
         
         # Ajustando o caso onde o limite inferior é maior que o superior
         # Isso aconteceria em casos onde list_dif_var[i] é negativo, o que não deveria acontecer nesta lógica, mas é um ajuste de segurança

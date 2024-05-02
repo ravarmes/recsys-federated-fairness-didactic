@@ -16,7 +16,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from AlgorithmUserFairness import RMSE, Polarization, IndividualLossVariance, GroupLossVariance
-# from AlgorithmImpartiality import AlgorithmImpartiality
+from AlgorithmImpartiality import AlgorithmImpartiality
 
 class MatrixFactorizationNN(tf.keras.Model):
     def __init__(self, num_users, num_items, embedding_dim):
@@ -232,52 +232,29 @@ class ServidorFedRecSys:
         self.modelo_global.set_weights(novos_pesos)
 
 
-    # def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(self):
-    #     total_perdas = sum(self.modelos_locais_loss)
-    #     pesos = [perda / total_perdas for perda in self.modelos_locais_loss]
-    #     pesos_globais = self.modelo_global.get_weights()
-    #     pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
-    #     novos_pesos = []
-    #     for i, _ in enumerate(pesos_globais):
-    #         pesos_parametro = [pesos[i] for pesos in pesos_clientes]
-    #         media_parametro = np.mean(pesos_parametro, axis=0)
-    #         novos_pesos.append(media_parametro)
-    #     self.modelo_global.set_weights(novos_pesos)
-
-    
-    # def agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv(self):
-    #     total_perdas = sum(self.modelos_locais_loss_indv)
-    #     pesos = [perda / total_perdas for perda in self.modelos_locais_loss_indv]
-    #     pesos_globais = self.modelo_global.get_weights()
-    #     pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
-    #     novos_pesos = []
-    #     for i, _ in enumerate(pesos_globais):
-    #         pesos_parametro = [pesos[i] for pesos in pesos_clientes]
-    #         media_parametro = np.mean(pesos_parametro, axis=0)
-    #         novos_pesos.append(media_parametro)
-    #     self.modelo_global.set_weights(novos_pesos)
-
-    def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss(self):
+    def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(self):
         total_perdas = sum(self.modelos_locais_loss)
-        pesos_normalizados = np.array([1 / (perda / total_perdas) for perda in self.modelos_locais_loss])
-        pesos_normalizados /= pesos_normalizados.sum()
+        pesos = [perda / total_perdas for perda in self.modelos_locais_loss]
+        pesos_globais = self.modelo_global.get_weights()
         pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
-        novos_pesos = [
-            np.average([cliente_pesos[idx] for cliente_pesos in pesos_clientes], axis=0, weights=pesos_normalizados)
-            for idx in range(len(self.modelo_global.get_weights()))
-        ]
+        novos_pesos = []
+        for i, _ in enumerate(pesos_globais):
+            pesos_parametro = [pesos[i] for pesos in pesos_clientes]
+            media_parametro = np.mean(pesos_parametro, axis=0)
+            novos_pesos.append(media_parametro)
         self.modelo_global.set_weights(novos_pesos)
 
-
-    def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv(self):
+    
+    def agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv(self):
         total_perdas = sum(self.modelos_locais_loss_indv)
-        pesos_normalizados = np.array([1 / (perda / total_perdas) for perda in self.modelos_locais_loss_indv])
-        pesos_normalizados /= pesos_normalizados.sum()
+        pesos = [perda / total_perdas for perda in self.modelos_locais_loss_indv]
+        pesos_globais = self.modelo_global.get_weights()
         pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
-        novos_pesos = [
-            np.average([cliente_pesos[idx] for cliente_pesos in pesos_clientes], axis=0, weights=pesos_normalizados)
-            for idx in range(len(self.modelo_global.get_weights()))
-        ]
+        novos_pesos = []
+        for i, _ in enumerate(pesos_globais):
+            pesos_parametro = [pesos[i] for pesos in pesos_clientes]
+            media_parametro = np.mean(pesos_parametro, axis=0)
+            novos_pesos.append(media_parametro)
         self.modelo_global.set_weights(novos_pesos)
 
 
@@ -285,19 +262,19 @@ class ServidorFedRecSys:
         recomendacoes = self.modelo_global.predict_all()
         omega = ~recomendacoes.isnull() 
 
-        # ilv = IndividualLossVariance(recomendacoes, omega, 1)
-        # algorithmImpartiality = AlgorithmImpartiality(recomendacoes, omega, 1)
-        # list_X_est = algorithmImpartiality.evaluate_federated(recomendacoes, self.modelos_locais_mean_indv, self.modelos_locais_loss_indv, 10) # calculates a list of h estimated matrices => h = 5
+        ilv = IndividualLossVariance(recomendacoes, omega, 1)
+        algorithmImpartiality = AlgorithmImpartiality(recomendacoes, omega, 1)
+        list_X_est = algorithmImpartiality.evaluate_federated(recomendacoes, self.modelos_locais_mean_indv, self.modelos_locais_loss_indv, 10) # calculates a list of h estimated matrices => h = 5
 
-        # list_losses = []
-        # for X_est in list_X_est:
-        #     losses = ilv.get_losses(X_est)
-        #     list_losses.append(losses)
+        list_losses = []
+        for X_est in list_X_est:
+            losses = ilv.get_losses(X_est)
+            list_losses.append(losses)
 
-        # Z = AlgorithmImpartiality.losses_to_Z(list_losses)
-        # list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
-        # recomendacoes_fairness = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) 
-        # return recomendacoes_fairness
+        Z = AlgorithmImpartiality.losses_to_Z(list_losses)
+        list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
+        recomendacoes_fairness = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) 
+        return recomendacoes_fairness
 
 def converter_tuplas_para_dataframe(tuplas, numero_de_usuarios, numero_de_itens):
     df = pd.DataFrame(columns=range(numero_de_itens), index=range(numero_de_usuarios))
@@ -370,9 +347,9 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
             if metodo_agregacao == 'ma':
                 servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos()
             elif metodo_agregacao == 'mp_loss':
-                servidor.agregar_modelos_locais_ao_global_media_ponderada_pesos_loss()
+                servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss()
             elif metodo_agregacao == 'mp_loss_indv':
-                servidor.agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv()
+                servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv()
             elif metodo_agregacao == 'ma_fair':
                 servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos()
                 servidor.aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(G)
@@ -465,10 +442,10 @@ embedding_dim = 16
 
 
 print(f"\nFedFairRecSys")
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma')
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss')
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv')
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma_fair')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma_fair')
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='nao_federado')
 
 

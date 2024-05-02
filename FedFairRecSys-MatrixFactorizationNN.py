@@ -292,6 +292,10 @@ class ServidorFedRecSys:
         total_perdas = sum(self.modelos_locais_loss_indv)
         pesos_normalizados = np.array([1 / (perda / total_perdas) for perda in self.modelos_locais_loss_indv])
         pesos_normalizados /= pesos_normalizados.sum()
+
+        print("agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv :: pesos_normalizados")
+        print(pesos_normalizados)
+
         pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
         novos_pesos = [
             np.average([cliente_pesos[idx] for cliente_pesos in pesos_clientes], axis=0, weights=pesos_normalizados)
@@ -299,6 +303,44 @@ class ServidorFedRecSys:
         ]
         self.modelo_global.set_weights(novos_pesos)
 
+
+    # def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv2(self):
+    #     # Passo 1: Calcular a média dos erros individuais
+    #     media_global = np.mean(self.modelos_locais_loss_indv)
+        
+    #     # Passo 2: Calcular as diferenças em relação à média
+    #     diferencas = np.array(self.modelos_locais_loss_indv) - media_global
+        
+    #     # Passo 3: Normalizar as diferenças para uma escala de 0 a 1
+    #     min_diferenca = np.min(diferencas)
+    #     max_diferenca = np.max(diferencas)
+        
+    #     if max_diferenca - min_diferenca == 0:  # Evitar divisão por zero
+    #         diferencas_normalizadas = np.zeros_like(diferencas)
+    #     else:
+    #         diferencas_normalizadas = (diferencas - min_diferenca) / (max_diferenca - min_diferenca)
+        
+    #     # Passo 4: Calcular pesos invertidos e normalizar
+    #     pesos_invertidos = 1 - diferencas_normalizadas
+    #     pesos_normalizados = pesos_invertidos / np.sum(pesos_invertidos)
+        
+    #     # Passo 5: Obter os pesos dos modelos locais e garantir consistência
+    #     pesos_modelos_locais = [np.array(modelo.get_weights()) for modelo in self.modelos_locais]
+        
+    #     # Identificar a forma do maior modelo local para inicializar 'pesos_agg'
+    #     max_shape = max([peso.shape for peso in pesos_modelos_locais], key=lambda x: np.prod(x))
+    #     pesos_agg = np.zeros(max_shape)  # Inicializar com zeros
+        
+    #     # Passo 6: Aplicar a média ponderada para calcular pesos do modelo global
+    #     for idx, peso in enumerate(pesos_modelos_locais):
+    #         # Verificar se as formas são compatíveis antes de somar
+    #         if pesos_agg.shape == peso.shape:
+    #             pesos_agg += pesos_normalizados[idx] * peso
+    #         else:
+    #             raise ValueError("Incompatibilidade de formas entre modelos locais.")
+        
+    #     # Definir os pesos do modelo global
+    #     self.modelo_global.set_weights(pesos_agg.tolist())  # Converter para lista antes de definir
 
     def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv2(self):
         # Passo 1: Calcular a média dos erros individuais
@@ -310,71 +352,68 @@ class ServidorFedRecSys:
         # Passo 3: Normalizar as diferenças para uma escala de 0 a 1
         min_diferenca = np.min(diferencas)
         max_diferenca = np.max(diferencas)
+        
         if max_diferenca - min_diferenca == 0:  # Evitar divisão por zero
             diferencas_normalizadas = np.zeros_like(diferencas)
         else:
             diferencas_normalizadas = (diferencas - min_diferenca) / (max_diferenca - min_diferenca)
         
         # Passo 4: Calcular pesos invertidos e normalizar
-        pesos_invertidos = 1 - diferencas_normalizadas
-        pesos_normalizados = pesos_invertidos / np.sum(pesos_invertidos)
-        
-        # Passo 5: Obter os pesos dos modelos locais
-        pesos_modelos_locais = [modelo.get_weights() for modelo in self.modelos_locais]
-        
-        # Passo 6: Aplicar a média ponderada para calcular pesos do modelo global
-        # Converter pesos_modelos_locais para um array numpy para facilidade de operação
-        pesos_agg = np.zeros_like(pesos_modelos_locais[0])  # Inicializar com zeros
-        
-        # Somatório ponderado para cada elemento do modelo global
-        for idx, peso in enumerate(pesos_modelos_locais):
-            pesos_agg += pesos_normalizados[idx] * np.array(peso)
-        
-        # Definir os pesos do modelo global
-        self.modelo_global.set_weights(pesos_agg.tolist())  # Converter para lista antes de definir
+        # pesos_invertidos = 1 - diferencas_normalizadas
+        pesos_normalizados = diferencas_normalizadas / np.sum(diferencas_normalizadas)
 
+        print("agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv2 :: pesos_normalizados")
+        print(pesos_normalizados)
+        
+        pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
+        novos_pesos = [
+            np.average([cliente_pesos[idx] for cliente_pesos in pesos_clientes], axis=0, weights=pesos_normalizados)
+            for idx in range(len(self.modelo_global.get_weights()))
+        ]
+        self.modelo_global.set_weights(novos_pesos)
 
 
     def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(self, G):
-        avaliacoes = converter_tuplas_para_dataframe(self.avaliacoes, 300, 1000)
+        avaliacoes = converter_tuplas_para_dataframe(self.avaliacoes, self.numero_de_usuarios, self.numero_de_itens)
         recomendacoes = self.modelo_global.predict_all()
         omega = ~avaliacoes.isnull() 
 
 
-        # --------------------------------
-        print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: avaliacoes")
-        print(avaliacoes)
-        print(type(avaliacoes))
+        # # --------------------------------
+        # print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: avaliacoes")
+        # print(avaliacoes)
+        # print(type(avaliacoes))
 
-        print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: recomendacoes")
-        print(recomendacoes)
-        print(type(recomendacoes))
+        # print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: recomendacoes")
+        # print(recomendacoes)
+        # print(type(recomendacoes))
 
-        # # Encontrar os valores não numéricos
-        # # Aplicar a função em todo o DataFrame para obter uma máscara booleana
-        # mask = recomendacoes.applymap(is_numeric)
-        # # Encontrar células não numéricas usando a máscara
-        # non_numeric_values = recomendacoes[~mask]
-        # print("Valores não numéricos:")
-        # print(non_numeric_values)
+        # # # Encontrar os valores não numéricos
+        # # # Aplicar a função em todo o DataFrame para obter uma máscara booleana
+        # # mask = recomendacoes.applymap(is_numeric)
+        # # # Encontrar células não numéricas usando a máscara
+        # # non_numeric_values = recomendacoes[~mask]
+        # # print("Valores não numéricos:")
+        # # print(non_numeric_values)
 
-        # # Converter todo o DataFrame para float, com coerção de erros
+        # # # Converter todo o DataFrame para float, com coerção de erros
+        # # recomendacoes = recomendacoes.apply(pd.to_numeric, errors='coerce')
+        # # # Substituir NaN por um valor padrão (0) em todo o DataFrame
+        # # recomendacoes.fillna(0, inplace=True)
+
+        # # print("Verificando valores não numéricos")
+        # # for column in recomendacoes.columns:
+        # #     is_numeric = pd.to_numeric(recomendacoes[column], errors='coerce').notna()
+        # #     if not is_numeric.all():
+        # #         print(f"Valores não numéricos encontrados na coluna {column}:")
+        # #         print(recomendacoes[column][~is_numeric])
+
         # recomendacoes = recomendacoes.apply(pd.to_numeric, errors='coerce')
-        # # Substituir NaN por um valor padrão (0) em todo o DataFrame
         # recomendacoes.fillna(0, inplace=True)
-
-        # print("Verificando valores não numéricos")
-        # for column in recomendacoes.columns:
-        #     is_numeric = pd.to_numeric(recomendacoes[column], errors='coerce').notna()
-        #     if not is_numeric.all():
-        #         print(f"Valores não numéricos encontrados na coluna {column}:")
-        #         print(recomendacoes[column][~is_numeric])
-
-        recomendacoes = recomendacoes.apply(pd.to_numeric, errors='coerce')
-        recomendacoes.fillna(0, inplace=True)
+        # recomendacoes.to_excel(f"teste.xlsx", index=False)
 
 
-        # -------------------------------------------
+        # # -------------------------------------------
 
         ilv = IndividualLossVariance(avaliacoes, omega, 1)
         algorithmImpartiality = AlgorithmImpartiality(avaliacoes, omega, 1)
@@ -408,6 +447,7 @@ def is_numeric(value):
 
 def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02, embedding_dim=16, metodo_agregacao = 'ma'):
 
+    print("\n----------------------------------------------------")
     print(f"\nMÉTODO DE AGREGAÇÃO :: {metodo_agregacao}")
 
     servidor = ServidorFedRecSys()
@@ -450,8 +490,8 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
                 print(f"Cliente {cliente.id} :: Adicionando Avaliações e Treinando")
                 # print("cliente.adicionar_novas_avaliacoes")
                 
-                # cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
-                cliente.adicionar_novas_avaliacoes(10, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
+                cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
+                # cliente.adicionar_novas_avaliacoes(10, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
 
                 # print("cliente.treinar_modelo")
                 cliente.treinar_modelo(epochs, batch_size=32, verbose=1)
@@ -470,9 +510,11 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
             if metodo_agregacao == 'ma':
                 servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos()
             elif metodo_agregacao == 'mp_loss':
-                servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss()
+                servidor.agregar_modelos_locais_ao_global_media_ponderada_pesos_loss()
             elif metodo_agregacao == 'mp_loss_indv':
-                servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv()
+                servidor.agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv()
+            elif metodo_agregacao == 'mp_loss_indv2':
+                servidor.agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv2()
             elif metodo_agregacao == 'ma_fair':
                 servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos()
                 servidor.aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(G)
@@ -545,13 +587,8 @@ dataset='X.xlsx'
 G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 
 # Melhores Hiperparâmetros
-# rounds=3
-# epochs=4 
-# learning_rate=0.01
-# embedding_dim = 16
-
-rounds=1
-epochs=1 
+rounds=2
+epochs=3 
 learning_rate=0.01
 embedding_dim = 16
 
@@ -571,10 +608,11 @@ embedding_dim = 16
 
 
 print(f"\nFedFairRecSys")
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma')
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss')
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv')
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma_fair')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv2')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma_fair')
 iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='nao_federado')
 
 
