@@ -447,6 +447,7 @@ def is_numeric(value):
 
 def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02, embedding_dim=16, metodo_agregacao = 'ma'):
 
+    print("\n----------------------------------------------------")
     print(f"\nMÉTODO DE AGREGAÇÃO :: {metodo_agregacao}")
 
     servidor = ServidorFedRecSys()
