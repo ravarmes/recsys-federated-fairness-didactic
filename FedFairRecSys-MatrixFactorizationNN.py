@@ -292,6 +292,10 @@ class ServidorFedRecSys:
         total_perdas = sum(self.modelos_locais_loss_indv)
         pesos_normalizados = np.array([1 / (perda / total_perdas) for perda in self.modelos_locais_loss_indv])
         pesos_normalizados /= pesos_normalizados.sum()
+
+        print("agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv :: pesos_normalizados")
+        print(pesos_normalizados)
+
         pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
         novos_pesos = [
             np.average([cliente_pesos[idx] for cliente_pesos in pesos_clientes], axis=0, weights=pesos_normalizados)
@@ -299,6 +303,44 @@ class ServidorFedRecSys:
         ]
         self.modelo_global.set_weights(novos_pesos)
 
+
+    # def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv2(self):
+    #     # Passo 1: Calcular a média dos erros individuais
+    #     media_global = np.mean(self.modelos_locais_loss_indv)
+        
+    #     # Passo 2: Calcular as diferenças em relação à média
+    #     diferencas = np.array(self.modelos_locais_loss_indv) - media_global
+        
+    #     # Passo 3: Normalizar as diferenças para uma escala de 0 a 1
+    #     min_diferenca = np.min(diferencas)
+    #     max_diferenca = np.max(diferencas)
+        
+    #     if max_diferenca - min_diferenca == 0:  # Evitar divisão por zero
+    #         diferencas_normalizadas = np.zeros_like(diferencas)
+    #     else:
+    #         diferencas_normalizadas = (diferencas - min_diferenca) / (max_diferenca - min_diferenca)
+        
+    #     # Passo 4: Calcular pesos invertidos e normalizar
+    #     pesos_invertidos = 1 - diferencas_normalizadas
+    #     pesos_normalizados = pesos_invertidos / np.sum(pesos_invertidos)
+        
+    #     # Passo 5: Obter os pesos dos modelos locais e garantir consistência
+    #     pesos_modelos_locais = [np.array(modelo.get_weights()) for modelo in self.modelos_locais]
+        
+    #     # Identificar a forma do maior modelo local para inicializar 'pesos_agg'
+    #     max_shape = max([peso.shape for peso in pesos_modelos_locais], key=lambda x: np.prod(x))
+    #     pesos_agg = np.zeros(max_shape)  # Inicializar com zeros
+        
+    #     # Passo 6: Aplicar a média ponderada para calcular pesos do modelo global
+    #     for idx, peso in enumerate(pesos_modelos_locais):
+    #         # Verificar se as formas são compatíveis antes de somar
+    #         if pesos_agg.shape == peso.shape:
+    #             pesos_agg += pesos_normalizados[idx] * peso
+    #         else:
+    #             raise ValueError("Incompatibilidade de formas entre modelos locais.")
+        
+    #     # Definir os pesos do modelo global
+    #     self.modelo_global.set_weights(pesos_agg.tolist())  # Converter para lista antes de definir
 
     def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv2(self):
         # Passo 1: Calcular a média dos erros individuais
@@ -310,29 +352,25 @@ class ServidorFedRecSys:
         # Passo 3: Normalizar as diferenças para uma escala de 0 a 1
         min_diferenca = np.min(diferencas)
         max_diferenca = np.max(diferencas)
+        
         if max_diferenca - min_diferenca == 0:  # Evitar divisão por zero
             diferencas_normalizadas = np.zeros_like(diferencas)
         else:
             diferencas_normalizadas = (diferencas - min_diferenca) / (max_diferenca - min_diferenca)
         
         # Passo 4: Calcular pesos invertidos e normalizar
-        pesos_invertidos = 1 - diferencas_normalizadas
-        pesos_normalizados = pesos_invertidos / np.sum(pesos_invertidos)
-        
-        # Passo 5: Obter os pesos dos modelos locais
-        pesos_modelos_locais = [modelo.get_weights() for modelo in self.modelos_locais]
-        
-        # Passo 6: Aplicar a média ponderada para calcular pesos do modelo global
-        # Converter pesos_modelos_locais para um array numpy para facilidade de operação
-        pesos_agg = np.zeros_like(pesos_modelos_locais[0])  # Inicializar com zeros
-        
-        # Somatório ponderado para cada elemento do modelo global
-        for idx, peso in enumerate(pesos_modelos_locais):
-            pesos_agg += pesos_normalizados[idx] * np.array(peso)
-        
-        # Definir os pesos do modelo global
-        self.modelo_global.set_weights(pesos_agg.tolist())  # Converter para lista antes de definir
+        # pesos_invertidos = 1 - diferencas_normalizadas
+        pesos_normalizados = diferencas_normalizadas / np.sum(diferencas_normalizadas)
 
+        print("agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv2 :: pesos_normalizados")
+        print(pesos_normalizados)
+        
+        pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
+        novos_pesos = [
+            np.average([cliente_pesos[idx] for cliente_pesos in pesos_clientes], axis=0, weights=pesos_normalizados)
+            for idx in range(len(self.modelo_global.get_weights()))
+        ]
+        self.modelo_global.set_weights(novos_pesos)
 
 
     def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(self, G):
@@ -474,6 +512,8 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
                 servidor.agregar_modelos_locais_ao_global_media_ponderada_pesos_loss()
             elif metodo_agregacao == 'mp_loss_indv':
                 servidor.agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv()
+            elif metodo_agregacao == 'mp_loss_indv2':
+                servidor.agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv2()
             elif metodo_agregacao == 'ma_fair':
                 servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos()
                 servidor.aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(G)
@@ -546,10 +586,10 @@ dataset='X.xlsx'
 G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 
 # Melhores Hiperparâmetros
-# rounds=3
-# epochs=4 
-# learning_rate=0.01
-# embedding_dim = 16
+rounds=2
+epochs=3 
+learning_rate=0.01
+embedding_dim = 16
 
 # # Melhores Hiperparâmetros
 # rounds=5 
@@ -560,17 +600,18 @@ G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 # dataset='X-u5-i10_semindices.xlsx'
 # G = {1: list(range(0, 2)), 2: list(range(2, 5))}
 
-rounds= 1
-epochs= 1
-learning_rate=0.1
-embedding_dim = 16
+# rounds= 1
+# epochs= 1
+# learning_rate=0.1
+# embedding_dim = 16
 
 
 print(f"\nFedFairRecSys")
 iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma')
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss')
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv')
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma_fair')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv2')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma_fair')
 iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='nao_federado')
 
 
