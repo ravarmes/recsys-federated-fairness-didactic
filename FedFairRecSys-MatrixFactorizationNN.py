@@ -232,39 +232,118 @@ class ServidorFedRecSys:
         self.modelo_global.set_weights(novos_pesos)
 
 
-    def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(self):
-        total_perdas = sum(self.modelos_locais_loss)
-        pesos = [perda / total_perdas for perda in self.modelos_locais_loss]
-        pesos_globais = self.modelo_global.get_weights()
-        pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
-        novos_pesos = []
-        for i, _ in enumerate(pesos_globais):
-            pesos_parametro = [pesos[i] for pesos in pesos_clientes]
-            media_parametro = np.mean(pesos_parametro, axis=0)
-            novos_pesos.append(media_parametro)
-        self.modelo_global.set_weights(novos_pesos)
+    # def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(self):
+    #     total_perdas = sum(self.modelos_locais_loss)
+    #     pesos = [perda / total_perdas for perda in self.modelos_locais_loss]
+    #     pesos_globais = self.modelo_global.get_weights()
+    #     pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
+    #     novos_pesos = []
+    #     for i, _ in enumerate(pesos_globais):
+    #         pesos_parametro = [pesos[i] for pesos in pesos_clientes]
+    #         media_parametro = np.mean(pesos_parametro, axis=0)
+    #         novos_pesos.append(media_parametro)
+    #     self.modelo_global.set_weights(novos_pesos)
 
     
-    def agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv(self):
-        total_perdas = sum(self.modelos_locais_loss_indv)
-        pesos = [perda / total_perdas for perda in self.modelos_locais_loss_indv]
-        pesos_globais = self.modelo_global.get_weights()
+    # def agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv(self):
+    #     total_perdas = sum(self.modelos_locais_loss_indv)
+    #     pesos = [perda / total_perdas for perda in self.modelos_locais_loss_indv]
+    #     pesos_globais = self.modelo_global.get_weights()
+    #     pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
+    #     novos_pesos = []
+    #     for i, _ in enumerate(pesos_globais):
+    #         pesos_parametro = [pesos[i] for pesos in pesos_clientes]
+    #         media_parametro = np.mean(pesos_parametro, axis=0)
+    #         novos_pesos.append(media_parametro)
+    #     self.modelo_global.set_weights(novos_pesos)
+
+
+    # def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(self, G):
+    #     recomendacoes = self.modelo_global.predict_all()
+    #     omega = ~recomendacoes.isnull() 
+
+    #     ilv = IndividualLossVariance(recomendacoes, omega, 1)
+    #     algorithmImpartiality = AlgorithmImpartiality(recomendacoes, omega, 1)
+    #     list_X_est = algorithmImpartiality.evaluate_federated(recomendacoes, self.modelos_locais_mean_indv, self.modelos_locais_loss_indv, 5) # calculates a list of h estimated matrices => h = 5
+
+    #     list_losses = []
+    #     for X_est in list_X_est:
+    #         losses = ilv.get_losses(X_est)
+    #         list_losses.append(losses)
+
+    #     Z = AlgorithmImpartiality.losses_to_Z(list_losses)
+    #     list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
+    #     recomendacoes_fairness = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) 
+    #     return recomendacoes_fairness
+
+    def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss(self):
+        total_perdas = sum(self.modelos_locais_loss)
+        pesos_normalizados = np.array([1 / (perda / total_perdas) for perda in self.modelos_locais_loss])
+        pesos_normalizados /= pesos_normalizados.sum()
         pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
-        novos_pesos = []
-        for i, _ in enumerate(pesos_globais):
-            pesos_parametro = [pesos[i] for pesos in pesos_clientes]
-            media_parametro = np.mean(pesos_parametro, axis=0)
-            novos_pesos.append(media_parametro)
+        novos_pesos = [
+            np.average([cliente_pesos[idx] for cliente_pesos in pesos_clientes], axis=0, weights=pesos_normalizados)
+            for idx in range(len(self.modelo_global.get_weights()))
+        ]
+        self.modelo_global.set_weights(novos_pesos)
+
+
+    def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss(self):
+        total_perdas = sum(self.modelos_locais_loss_indv)
+        pesos_normalizados = np.array([1 / (perda / total_perdas) for perda in self.modelos_locais_loss_indv])
+        pesos_normalizados /= pesos_normalizados.sum()
+        pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
+        novos_pesos = [
+            np.average([cliente_pesos[idx] for cliente_pesos in pesos_clientes], axis=0, weights=pesos_normalizados)
+            for idx in range(len(self.modelo_global.get_weights()))
+        ]
         self.modelo_global.set_weights(novos_pesos)
 
 
     def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(self, G):
+        avaliacoes = converter_tuplas_para_dataframe(self.avaliacoes, 300, 1000)
         recomendacoes = self.modelo_global.predict_all()
-        omega = ~recomendacoes.isnull() 
+        omega = ~avaliacoes.isnull() 
 
-        ilv = IndividualLossVariance(recomendacoes, omega, 1)
-        algorithmImpartiality = AlgorithmImpartiality(recomendacoes, omega, 1)
-        list_X_est = algorithmImpartiality.evaluate_federated(recomendacoes, self.modelos_locais_mean_indv, self.modelos_locais_loss_indv, 5) # calculates a list of h estimated matrices => h = 5
+
+        # --------------------------------
+        print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: avaliacoes")
+        print(avaliacoes)
+        print(type(avaliacoes))
+
+        print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: recomendacoes")
+        print(recomendacoes)
+        print(type(recomendacoes))
+
+        # # Encontrar os valores não numéricos
+        # # Aplicar a função em todo o DataFrame para obter uma máscara booleana
+        # mask = recomendacoes.applymap(is_numeric)
+        # # Encontrar células não numéricas usando a máscara
+        # non_numeric_values = recomendacoes[~mask]
+        # print("Valores não numéricos:")
+        # print(non_numeric_values)
+
+        # # Converter todo o DataFrame para float, com coerção de erros
+        # recomendacoes = recomendacoes.apply(pd.to_numeric, errors='coerce')
+        # # Substituir NaN por um valor padrão (0) em todo o DataFrame
+        # recomendacoes.fillna(0, inplace=True)
+
+        # print("Verificando valores não numéricos")
+        # for column in recomendacoes.columns:
+        #     is_numeric = pd.to_numeric(recomendacoes[column], errors='coerce').notna()
+        #     if not is_numeric.all():
+        #         print(f"Valores não numéricos encontrados na coluna {column}:")
+        #         print(recomendacoes[column][~is_numeric])
+
+        recomendacoes = recomendacoes.apply(pd.to_numeric, errors='coerce')
+        recomendacoes.fillna(0, inplace=True)
+
+
+        # -------------------------------------------
+
+        ilv = IndividualLossVariance(avaliacoes, omega, 1)
+        algorithmImpartiality = AlgorithmImpartiality(avaliacoes, omega, 1)
+        list_X_est = algorithmImpartiality.evaluate(recomendacoes, 5) # calculates a list of h estimated matrices => h = 5
 
         list_losses = []
         for X_est in list_X_est:
@@ -282,6 +361,15 @@ def converter_tuplas_para_dataframe(tuplas, numero_de_usuarios, numero_de_itens)
         user_id, item_id, rating = tupla
         df.at[user_id, item_id] = rating
     return df
+
+# Função para testar se um valor pode ser convertido para float
+def is_numeric(value):
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
+
 
 def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02, embedding_dim=16, metodo_agregacao = 'ma'):
 
@@ -418,8 +506,19 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
 
 
 
-# dataset='X.xlsx'
-# G = {1: list(range(0, 15)), 2: list(range(15, 300))}
+dataset='X.xlsx'
+G = {1: list(range(0, 15)), 2: list(range(15, 300))}
+
+# Melhores Hiperparâmetros
+# rounds=3
+# epochs=4 
+# learning_rate=0.01
+# embedding_dim = 16
+
+rounds=1
+epochs=1 
+learning_rate=0.01
+embedding_dim = 16
 
 # # Melhores Hiperparâmetros
 # rounds=5 
@@ -427,20 +526,20 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
 # learning_rate=0.000174
 # embedding_dim = 16
 
-dataset='X-u5-i10_semindices.xlsx'
-G = {1: list(range(0, 2)), 2: list(range(2, 5))}
+# dataset='X-u5-i10_semindices.xlsx'
+# G = {1: list(range(0, 2)), 2: list(range(2, 5))}
 
-rounds= 1
-epochs= 1
-learning_rate=0.1
-embedding_dim = 16
+# rounds= 1
+# epochs= 1
+# learning_rate=0.1
+# embedding_dim = 16
 
 
 print(f"\nFedFairRecSys")
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma')
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss')
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv')
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma_fair')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma_fair')
 iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='nao_federado')
 
 
