@@ -288,7 +288,7 @@ class ServidorFedRecSys:
         self.modelo_global.set_weights(novos_pesos)
 
 
-    def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss(self):
+    def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv(self):
         total_perdas = sum(self.modelos_locais_loss_indv)
         pesos_normalizados = np.array([1 / (perda / total_perdas) for perda in self.modelos_locais_loss_indv])
         pesos_normalizados /= pesos_normalizados.sum()
@@ -298,6 +298,41 @@ class ServidorFedRecSys:
             for idx in range(len(self.modelo_global.get_weights()))
         ]
         self.modelo_global.set_weights(novos_pesos)
+
+
+    def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv2(self):
+        # Passo 1: Calcular a média dos erros individuais
+        media_global = np.mean(self.modelos_locais_loss_indv)
+        
+        # Passo 2: Calcular as diferenças em relação à média
+        diferencas = np.array(self.modelos_locais_loss_indv) - media_global
+        
+        # Passo 3: Normalizar as diferenças para uma escala de 0 a 1
+        min_diferenca = np.min(diferencas)
+        max_diferenca = np.max(diferencas)
+        if max_diferenca - min_diferenca == 0:  # Evitar divisão por zero
+            diferencas_normalizadas = np.zeros_like(diferencas)
+        else:
+            diferencas_normalizadas = (diferencas - min_diferenca) / (max_diferenca - min_diferenca)
+        
+        # Passo 4: Calcular pesos invertidos e normalizar
+        pesos_invertidos = 1 - diferencas_normalizadas
+        pesos_normalizados = pesos_invertidos / np.sum(pesos_invertidos)
+        
+        # Passo 5: Obter os pesos dos modelos locais
+        pesos_modelos_locais = [modelo.get_weights() for modelo in self.modelos_locais]
+        
+        # Passo 6: Aplicar a média ponderada para calcular pesos do modelo global
+        # Converter pesos_modelos_locais para um array numpy para facilidade de operação
+        pesos_agg = np.zeros_like(pesos_modelos_locais[0])  # Inicializar com zeros
+        
+        # Somatório ponderado para cada elemento do modelo global
+        for idx, peso in enumerate(pesos_modelos_locais):
+            pesos_agg += pesos_normalizados[idx] * np.array(peso)
+        
+        # Definir os pesos do modelo global
+        self.modelo_global.set_weights(pesos_agg.tolist())  # Converter para lista antes de definir
+
 
 
     def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(self, G):
