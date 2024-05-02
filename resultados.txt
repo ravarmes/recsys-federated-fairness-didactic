@@ -238,7 +238,6 @@ RMSE : 1.38
 ----------------------------------------------------
 
 
-<<<<<<< HEAD
 Round 1 - Epochs 1 -  Learning Rate 0.1
 Mï¿½todo de Agregaï¿½ï¿½o ma_fair 
 Polarization (Rpol) : 0.850920695
@@ -270,42 +269,10 @@ Polarization (Rpol) : 0.202374596
 Individual Loss Variance (Rindv) : 0.179851604
 Group Loss Variance (Rgrp) : 0.000628450
 RMSE : 1.230039411
-=======
-Round 3 - Epochs 4 -  Learning Rate 0.01
-Mï¿½todo de Agregaï¿½ï¿½o ma 
-Polarization (Rpol) : 0.047395661
-Individual Loss Variance (Rindv) : 0.358299747
-Group Loss Variance (Rgrp) : 0.012009507
-RMSE : 1.337519366
-
-
-Round 3 - Epochs 4 -  Learning Rate 0.01
-Mï¿½todo de Agregaï¿½ï¿½o mp_loss 
-Polarization (Rpol) : 0.053636727
-Individual Loss Variance (Rindv) : 0.405952576
-Group Loss Variance (Rgrp) : 0.025081620
-RMSE : 1.365863283
-
-
-Round 3 - Epochs 4 -  Learning Rate 0.01
-Mï¿½todo de Agregaï¿½ï¿½o mp_loss_indv 
-Polarization (Rpol) : 0.054370850
-Individual Loss Variance (Rindv) : 0.359198857
-Group Loss Variance (Rgrp) : 0.014263025
-RMSE : 1.344843169
-
-
-Round 3 - Epochs 4 -  Learning Rate 0.01
-Mï¿½todo de Agregaï¿½ï¿½o ma 
-Polarization (Rpol) : 0.057077705
-Individual Loss Variance (Rindv) : 0.377101296
-Group Loss Variance (Rgrp) : 0.018386844
-RMSE : 1.349808557
->>>>>>> 1cf69191b84c7178595f4e6aed2f66acd810cd8e
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação ma 
+Mï¿½todo de Agregaï¿½ï¿½o ma 
 Polarization (Rpol) : 0.642695364
 Individual Loss Variance (Rindv) : 0.526628502
 Group Loss Variance (Rgrp) : 0.168934745
@@ -313,7 +280,7 @@ RMSE : 0.870344176
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação mp_loss 
+Mï¿½todo de Agregaï¿½ï¿½o mp_loss 
 Polarization (Rpol) : 1.081597907
 Individual Loss Variance (Rindv) : 0.103340862
 Group Loss Variance (Rgrp) : 0.037844914
@@ -321,7 +288,7 @@ RMSE : 0.931937123
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação mp_loss_indv 
+Mï¿½todo de Agregaï¿½ï¿½o mp_loss_indv 
 Polarization (Rpol) : 0.983550559
 Individual Loss Variance (Rindv) : 0.154757120
 Group Loss Variance (Rgrp) : 0.109763693
@@ -329,7 +296,7 @@ RMSE : 0.837249927
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação mp_loss_indv2 
+Mï¿½todo de Agregaï¿½ï¿½o mp_loss_indv2 
 Polarization (Rpol) : 1.033878862
 Individual Loss Variance (Rindv) : 0.131751530
 Group Loss Variance (Rgrp) : 0.032415575
@@ -337,7 +304,7 @@ RMSE : 0.831072896
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação ma_fair 
+Mï¿½todo de Agregaï¿½ï¿½o ma_fair 
 Polarization (Rpol) : 1.153780313
 Individual Loss Variance (Rindv) : 0.046953576
 Group Loss Variance (Rgrp) : 0.002227471
@@ -345,7 +312,7 @@ RMSE : 0.671641833
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação nao_federado 
+Mï¿½todo de Agregaï¿½ï¿½o nao_federado 
 Polarization (Rpol) : 0.768691454
 Individual Loss Variance (Rindv) : 0.265540731
 Group Loss Variance (Rgrp) : 0.099670919
@@ -353,7 +320,7 @@ RMSE : 0.851706494
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação ma 
+Mï¿½todo de Agregaï¿½ï¿½o ma 
 Polarization (Rpol) : 0.867868702
 Individual Loss Variance (Rindv) : 0.077048671
 Group Loss Variance (Rgrp) : 0.038794730
@@ -361,7 +328,7 @@ RMSE : 0.787073481
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação mp_loss 
+Mï¿½todo de Agregaï¿½ï¿½o mp_loss 
 Polarization (Rpol) : 1.140823654
 Individual Loss Variance (Rindv) : 0.087974315
 Group Loss Variance (Rgrp) : 0.002949802
@@ -369,7 +336,7 @@ RMSE : 0.852760765
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação mp_loss_indv 
+Mï¿½todo de Agregaï¿½ï¿½o mp_loss_indv 
 Polarization (Rpol) : 0.658261628
 Individual Loss Variance (Rindv) : 0.241702119
 Group Loss Variance (Rgrp) : 0.011920945
@@ -377,7 +344,7 @@ RMSE : 0.838492579
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação mp_loss_indv2 
+Mï¿½todo de Agregaï¿½ï¿½o mp_loss_indv2 
 Polarization (Rpol) : 1.189575445
 Individual Loss Variance (Rindv) : 0.140315854
 Group Loss Variance (Rgrp) : 0.016339792
@@ -385,7 +352,7 @@ RMSE : 0.831370997
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação ma_fair 
+Mï¿½todo de Agregaï¿½ï¿½o ma_fair 
 Polarization (Rpol) : 0.912107096
 Individual Loss Variance (Rindv) : 0.160958835
 Group Loss Variance (Rgrp) : 0.003089416
@@ -393,7 +360,7 @@ RMSE : 0.917684467
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação nao_federado 
+Mï¿½todo de Agregaï¿½ï¿½o nao_federado 
 Polarization (Rpol) : 0.868857734
 Individual Loss Variance (Rindv) : 0.259132575
 Group Loss Variance (Rgrp) : 0.078218430
@@ -401,7 +368,7 @@ RMSE : 0.918089136
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação ma 
+Mï¿½todo de Agregaï¿½ï¿½o ma 
 Polarization (Rpol) : 0.975856860
 Individual Loss Variance (Rindv) : 0.201737014
 Group Loss Variance (Rgrp) : 0.032913624
@@ -409,7 +376,7 @@ RMSE : 0.761181065
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação mp_loss 
+Mï¿½todo de Agregaï¿½ï¿½o mp_loss 
 Polarization (Rpol) : 1.285735164
 Individual Loss Variance (Rindv) : 0.137429812
 Group Loss Variance (Rgrp) : 0.094104255
@@ -417,7 +384,7 @@ RMSE : 0.790602898
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação mp_loss_indv 
+Mï¿½todo de Agregaï¿½ï¿½o mp_loss_indv 
 Polarization (Rpol) : 0.955930641
 Individual Loss Variance (Rindv) : 0.137927457
 Group Loss Variance (Rgrp) : 0.070575778
@@ -425,7 +392,7 @@ RMSE : 0.819952803
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação mp_loss_indv2 
+Mï¿½todo de Agregaï¿½ï¿½o mp_loss_indv2 
 Polarization (Rpol) : 1.052082104
 Individual Loss Variance (Rindv) : 0.116438058
 Group Loss Variance (Rgrp) : 0.078020586
@@ -433,7 +400,7 @@ RMSE : 0.896797833
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação ma_fair 
+Mï¿½todo de Agregaï¿½ï¿½o ma_fair 
 Polarization (Rpol) : 1.503464597
 Individual Loss Variance (Rindv) : 0.474034454
 Group Loss Variance (Rgrp) : 0.007671339
@@ -441,7 +408,7 @@ RMSE : 0.915275576
 
 
 Round 1 - Epochs 1 -  Learning Rate 0.1
-Método de Agregação nao_federado 
+Mï¿½todo de Agregaï¿½ï¿½o nao_federado 
 Polarization (Rpol) : 0.649496570
 Individual Loss Variance (Rindv) : 0.112849688
 Group Loss Variance (Rgrp) : 0.034482974
@@ -449,10 +416,26 @@ RMSE : 0.928419379
 
 
 Round 3 - Epochs 4 -  Learning Rate 0.01
-Método de Agregação ma 
+Mï¿½todo de Agregaï¿½ï¿½o ma 
 Polarization (Rpol) : 0.048091262
 Individual Loss Variance (Rindv) : 0.354547985
 Group Loss Variance (Rgrp) : 0.015604483
 RMSE : 1.348557684
+
+
+Round 2 - Epochs 3 -  Learning Rate 0.01
+Mï¿½todo de Agregaï¿½ï¿½o ma 
+Polarization (Rpol) : 0.024541288
+Individual Loss Variance (Rindv) : 0.269273595
+Group Loss Variance (Rgrp) : 0.000754136
+RMSE : 1.279055889
+
+
+Round 2 - Epochs 3 -  Learning Rate 0.01
+Método de Agregação mp_loss_indv 
+Polarization (Rpol) : 0.020559681
+Individual Loss Variance (Rindv) : 0.241723933
+Group Loss Variance (Rgrp) : 0.001010599
+RMSE : 1.256959185
 
 

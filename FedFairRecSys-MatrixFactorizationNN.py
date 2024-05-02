@@ -564,12 +564,13 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
 
 
     # Defina o nome do arquivo onde deseja salvar as saídas
-    output_file = "resultados.txt"
+    output_file = f"resultados-{dataset}.txt"
 
     # Redirecione a saída dos prints para um arquivo txt
     with open(output_file, "a") as file:
         
         print(f"Round {rounds} - Epochs {epochs} -  Learning Rate {learning_rate}", file=file)
+        print(f"Dataset {dataset} ", file=file)
         print(f"Método de Agregação {metodo_agregacao} ", file=file)
         print(f"Polarization (Rpol) : {Rpol:.9f}", file=file)
         print(f"Individual Loss Variance (Rindv) : {Rindv:.9f}", file=file)
