@@ -422,6 +422,7 @@ Individual Loss Variance (Rindv) : 0.354547985
 Group Loss Variance (Rgrp) : 0.015604483
 RMSE : 1.348557684
 
+--------------------------------------------------
 
 Round 2 - Epochs 3 -  Learning Rate 0.01
 Mï¿½todo de Agregaï¿½ï¿½o ma 
@@ -432,10 +433,18 @@ RMSE : 1.279055889
 
 
 Round 2 - Epochs 3 -  Learning Rate 0.01
-Método de Agregação mp_loss_indv 
+Mï¿½todo de Agregaï¿½ï¿½o mp_loss_indv 
 Polarization (Rpol) : 0.020559681
 Individual Loss Variance (Rindv) : 0.241723933
 Group Loss Variance (Rgrp) : 0.001010599
 RMSE : 1.256959185
+
+
+Round 2 - Epochs 3 -  Learning Rate 0.01
+Método de Agregação mp_loss_indv2 
+Polarization (Rpol) : 0.022430903
+Individual Loss Variance (Rindv) : 0.267900992
+Group Loss Variance (Rgrp) : 0.000795172
+RMSE : 1.273009488
 
 
