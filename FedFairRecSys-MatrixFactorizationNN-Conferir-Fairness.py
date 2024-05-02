@@ -16,7 +16,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from AlgorithmUserFairness import RMSE, Polarization, IndividualLossVariance, GroupLossVariance
-from AlgorithmImpartiality import AlgorithmImpartiality
+# from AlgorithmImpartiality import AlgorithmImpartiality
 
 class MatrixFactorizationNN(tf.keras.Model):
     def __init__(self, num_users, num_items, embedding_dim):
@@ -262,19 +262,19 @@ class ServidorFedRecSys:
         recomendacoes = self.modelo_global.predict_all()
         omega = ~recomendacoes.isnull() 
 
-        ilv = IndividualLossVariance(recomendacoes, omega, 1)
-        algorithmImpartiality = AlgorithmImpartiality(recomendacoes, omega, 1)
-        list_X_est = algorithmImpartiality.evaluate_federated(recomendacoes, self.modelos_locais_mean_indv, self.modelos_locais_loss_indv, 10) # calculates a list of h estimated matrices => h = 5
+        # ilv = IndividualLossVariance(recomendacoes, omega, 1)
+        # algorithmImpartiality = AlgorithmImpartiality(recomendacoes, omega, 1)
+        # list_X_est = algorithmImpartiality.evaluate_federated(recomendacoes, self.modelos_locais_mean_indv, self.modelos_locais_loss_indv, 10) # calculates a list of h estimated matrices => h = 5
 
-        list_losses = []
-        for X_est in list_X_est:
-            losses = ilv.get_losses(X_est)
-            list_losses.append(losses)
+        # list_losses = []
+        # for X_est in list_X_est:
+        #     losses = ilv.get_losses(X_est)
+        #     list_losses.append(losses)
 
-        Z = AlgorithmImpartiality.losses_to_Z(list_losses)
-        list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
-        recomendacoes_fairness = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) 
-        return recomendacoes_fairness
+        # Z = AlgorithmImpartiality.losses_to_Z(list_losses)
+        # list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
+        # recomendacoes_fairness = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) 
+        # return recomendacoes_fairness
 
 def converter_tuplas_para_dataframe(tuplas, numero_de_usuarios, numero_de_itens):
     df = pd.DataFrame(columns=range(numero_de_itens), index=range(numero_de_usuarios))
@@ -442,10 +442,10 @@ embedding_dim = 16
 
 
 print(f"\nFedFairRecSys")
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma')
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss')
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv')
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma_fair')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma_fair')
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='nao_federado')
 
 
