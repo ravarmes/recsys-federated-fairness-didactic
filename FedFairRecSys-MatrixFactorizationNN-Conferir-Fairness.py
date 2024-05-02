@@ -232,29 +232,52 @@ class ServidorFedRecSys:
         self.modelo_global.set_weights(novos_pesos)
 
 
-    def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(self):
-        total_perdas = sum(self.modelos_locais_loss)
-        pesos = [perda / total_perdas for perda in self.modelos_locais_loss]
-        pesos_globais = self.modelo_global.get_weights()
-        pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
-        novos_pesos = []
-        for i, _ in enumerate(pesos_globais):
-            pesos_parametro = [pesos[i] for pesos in pesos_clientes]
-            media_parametro = np.mean(pesos_parametro, axis=0)
-            novos_pesos.append(media_parametro)
-        self.modelo_global.set_weights(novos_pesos)
+    # def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(self):
+    #     total_perdas = sum(self.modelos_locais_loss)
+    #     pesos = [perda / total_perdas for perda in self.modelos_locais_loss]
+    #     pesos_globais = self.modelo_global.get_weights()
+    #     pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
+    #     novos_pesos = []
+    #     for i, _ in enumerate(pesos_globais):
+    #         pesos_parametro = [pesos[i] for pesos in pesos_clientes]
+    #         media_parametro = np.mean(pesos_parametro, axis=0)
+    #         novos_pesos.append(media_parametro)
+    #     self.modelo_global.set_weights(novos_pesos)
 
     
-    def agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv(self):
-        total_perdas = sum(self.modelos_locais_loss_indv)
-        pesos = [perda / total_perdas for perda in self.modelos_locais_loss_indv]
-        pesos_globais = self.modelo_global.get_weights()
+    # def agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv(self):
+    #     total_perdas = sum(self.modelos_locais_loss_indv)
+    #     pesos = [perda / total_perdas for perda in self.modelos_locais_loss_indv]
+    #     pesos_globais = self.modelo_global.get_weights()
+    #     pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
+    #     novos_pesos = []
+    #     for i, _ in enumerate(pesos_globais):
+    #         pesos_parametro = [pesos[i] for pesos in pesos_clientes]
+    #         media_parametro = np.mean(pesos_parametro, axis=0)
+    #         novos_pesos.append(media_parametro)
+    #     self.modelo_global.set_weights(novos_pesos)
+
+    def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss(self):
+        total_perdas = sum(self.modelos_locais_loss)
+        pesos_normalizados = np.array([1 / (perda / total_perdas) for perda in self.modelos_locais_loss])
+        pesos_normalizados /= pesos_normalizados.sum()
         pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
-        novos_pesos = []
-        for i, _ in enumerate(pesos_globais):
-            pesos_parametro = [pesos[i] for pesos in pesos_clientes]
-            media_parametro = np.mean(pesos_parametro, axis=0)
-            novos_pesos.append(media_parametro)
+        novos_pesos = [
+            np.average([cliente_pesos[idx] for cliente_pesos in pesos_clientes], axis=0, weights=pesos_normalizados)
+            for idx in range(len(self.modelo_global.get_weights()))
+        ]
+        self.modelo_global.set_weights(novos_pesos)
+
+
+    def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv(self):
+        total_perdas = sum(self.modelos_locais_loss_indv)
+        pesos_normalizados = np.array([1 / (perda / total_perdas) for perda in self.modelos_locais_loss_indv])
+        pesos_normalizados /= pesos_normalizados.sum()
+        pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
+        novos_pesos = [
+            np.average([cliente_pesos[idx] for cliente_pesos in pesos_clientes], axis=0, weights=pesos_normalizados)
+            for idx in range(len(self.modelo_global.get_weights()))
+        ]
         self.modelo_global.set_weights(novos_pesos)
 
 
@@ -347,9 +370,9 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
             if metodo_agregacao == 'ma':
                 servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos()
             elif metodo_agregacao == 'mp_loss':
-                servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss()
+                servidor.agregar_modelos_locais_ao_global_media_ponderada_pesos_loss()
             elif metodo_agregacao == 'mp_loss_indv':
-                servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv()
+                servidor.agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv()
             elif metodo_agregacao == 'ma_fair':
                 servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos()
                 servidor.aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(G)

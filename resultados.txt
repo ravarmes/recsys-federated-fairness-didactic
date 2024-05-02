@@ -262,3 +262,11 @@ Group Loss Variance (Rgrp) : 0.014263025
 RMSE : 1.344843169
 
 
+Round 3 - Epochs 4 -  Learning Rate 0.01
+Método de Agregação ma 
+Polarization (Rpol) : 0.057077705
+Individual Loss Variance (Rindv) : 0.377101296
+Group Loss Variance (Rgrp) : 0.018386844
+RMSE : 1.349808557
+
+
