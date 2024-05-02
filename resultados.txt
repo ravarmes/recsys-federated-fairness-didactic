@@ -213,3 +213,11 @@ RMSE : 1.088803256
 ----------------------------------------------------
 
 
+Round 3 - Epochs 4 -  Learning Rate 0.01
+Método de Agregação ma_fair 
+Polarization (Rpol) : 0.058683063
+Individual Loss Variance (Rindv) : 0.466746695
+Group Loss Variance (Rgrp) : 0.031384417
+RMSE : 1.380190285
+
+

@@ -428,7 +428,7 @@ G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 # embedding_dim = 16
 
 rounds=3 
-epochs=10 
+epochs=4 
 learning_rate=0.01
 embedding_dim = 16
 
