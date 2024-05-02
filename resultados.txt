@@ -238,3 +238,36 @@ RMSE : 1.38
 ----------------------------------------------------
 
 
+Round 1 - Epochs 1 -  Learning Rate 0.1
+M�todo de Agrega��o ma_fair 
+Polarization (Rpol) : 0.850920695
+Individual Loss Variance (Rindv) : 0.291366492
+Group Loss Variance (Rgrp) : 0.195106033
+RMSE : 0.921774900
+
+
+Round 1 - Epochs 1 -  Learning Rate 0.1
+M�todo de Agrega��o nao_federado 
+Polarization (Rpol) : 0.813677938
+Individual Loss Variance (Rindv) : 0.032151500
+Group Loss Variance (Rgrp) : 0.003806746
+RMSE : 0.655662567
+
+---
+
+Round 1 - Epochs 1 -  Learning Rate 0.1
+M�todo de Agrega��o ma_fair 
+Polarization (Rpol) : 0.011506081
+Individual Loss Variance (Rindv) : 0.189369149
+Group Loss Variance (Rgrp) : 0.001311532
+RMSE : 1.214041405
+
+
+Round 1 - Epochs 1 -  Learning Rate 0.1
+M�todo de Agrega��o nao_federado 
+Polarization (Rpol) : 0.202374596
+Individual Loss Variance (Rindv) : 0.179851604
+Group Loss Variance (Rgrp) : 0.000628450
+RMSE : 1.230039411
+
+

@@ -336,45 +336,46 @@ class ServidorFedRecSys:
 
 
     def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(self, G):
-        avaliacoes = converter_tuplas_para_dataframe(self.avaliacoes, 300, 1000)
+        avaliacoes = converter_tuplas_para_dataframe(self.avaliacoes, self.numero_de_usuarios, self.numero_de_itens)
         recomendacoes = self.modelo_global.predict_all()
         omega = ~avaliacoes.isnull() 
 
 
-        # --------------------------------
-        print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: avaliacoes")
-        print(avaliacoes)
-        print(type(avaliacoes))
+        # # --------------------------------
+        # print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: avaliacoes")
+        # print(avaliacoes)
+        # print(type(avaliacoes))
 
-        print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: recomendacoes")
-        print(recomendacoes)
-        print(type(recomendacoes))
+        # print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: recomendacoes")
+        # print(recomendacoes)
+        # print(type(recomendacoes))
 
-        # # Encontrar os valores não numéricos
-        # # Aplicar a função em todo o DataFrame para obter uma máscara booleana
-        # mask = recomendacoes.applymap(is_numeric)
-        # # Encontrar células não numéricas usando a máscara
-        # non_numeric_values = recomendacoes[~mask]
-        # print("Valores não numéricos:")
-        # print(non_numeric_values)
+        # # # Encontrar os valores não numéricos
+        # # # Aplicar a função em todo o DataFrame para obter uma máscara booleana
+        # # mask = recomendacoes.applymap(is_numeric)
+        # # # Encontrar células não numéricas usando a máscara
+        # # non_numeric_values = recomendacoes[~mask]
+        # # print("Valores não numéricos:")
+        # # print(non_numeric_values)
 
-        # # Converter todo o DataFrame para float, com coerção de erros
+        # # # Converter todo o DataFrame para float, com coerção de erros
+        # # recomendacoes = recomendacoes.apply(pd.to_numeric, errors='coerce')
+        # # # Substituir NaN por um valor padrão (0) em todo o DataFrame
+        # # recomendacoes.fillna(0, inplace=True)
+
+        # # print("Verificando valores não numéricos")
+        # # for column in recomendacoes.columns:
+        # #     is_numeric = pd.to_numeric(recomendacoes[column], errors='coerce').notna()
+        # #     if not is_numeric.all():
+        # #         print(f"Valores não numéricos encontrados na coluna {column}:")
+        # #         print(recomendacoes[column][~is_numeric])
+
         # recomendacoes = recomendacoes.apply(pd.to_numeric, errors='coerce')
-        # # Substituir NaN por um valor padrão (0) em todo o DataFrame
         # recomendacoes.fillna(0, inplace=True)
-
-        # print("Verificando valores não numéricos")
-        # for column in recomendacoes.columns:
-        #     is_numeric = pd.to_numeric(recomendacoes[column], errors='coerce').notna()
-        #     if not is_numeric.all():
-        #         print(f"Valores não numéricos encontrados na coluna {column}:")
-        #         print(recomendacoes[column][~is_numeric])
-
-        recomendacoes = recomendacoes.apply(pd.to_numeric, errors='coerce')
-        recomendacoes.fillna(0, inplace=True)
+        # recomendacoes.to_excel(f"teste.xlsx", index=False)
 
 
-        # -------------------------------------------
+        # # -------------------------------------------
 
         ilv = IndividualLossVariance(avaliacoes, omega, 1)
         algorithmImpartiality = AlgorithmImpartiality(avaliacoes, omega, 1)
@@ -450,8 +451,8 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
                 print(f"Cliente {cliente.id} :: Adicionando Avaliações e Treinando")
                 # print("cliente.adicionar_novas_avaliacoes")
                 
-                # cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
-                cliente.adicionar_novas_avaliacoes(10, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
+                cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
+                # cliente.adicionar_novas_avaliacoes(10, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
 
                 # print("cliente.treinar_modelo")
                 cliente.treinar_modelo(epochs, batch_size=32, verbose=1)
@@ -470,9 +471,9 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
             if metodo_agregacao == 'ma':
                 servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos()
             elif metodo_agregacao == 'mp_loss':
-                servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss()
+                servidor.agregar_modelos_locais_ao_global_media_ponderada_pesos_loss()
             elif metodo_agregacao == 'mp_loss_indv':
-                servidor.agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv()
+                servidor.agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv()
             elif metodo_agregacao == 'ma_fair':
                 servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos()
                 servidor.aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(G)
@@ -550,11 +551,6 @@ G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 # learning_rate=0.01
 # embedding_dim = 16
 
-rounds=1
-epochs=1 
-learning_rate=0.01
-embedding_dim = 16
-
 # # Melhores Hiperparâmetros
 # rounds=5 
 # epochs=10 
@@ -564,14 +560,14 @@ embedding_dim = 16
 # dataset='X-u5-i10_semindices.xlsx'
 # G = {1: list(range(0, 2)), 2: list(range(2, 5))}
 
-# rounds= 1
-# epochs= 1
-# learning_rate=0.1
-# embedding_dim = 16
+rounds= 1
+epochs= 1
+learning_rate=0.1
+embedding_dim = 16
 
 
 print(f"\nFedFairRecSys")
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma')
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss')
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv')
 iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma_fair')
