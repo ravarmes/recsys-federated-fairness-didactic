@@ -380,7 +380,7 @@ class ServidorFedRecSys:
         self.numero_de_usuarios = recomendacoes_fairness.shape[0]
         self.numero_de_itens = recomendacoes_fairness.shape[1]
         avaliacoes_tuplas = list(zip(X, y, ratings))
-        self.avaliacoes = avaliacoes_tuplas
+        # self.avaliacoes = avaliacoes_tuplas
         
         # Preparar os dados X_train e y_train
         self.X_train = np.array([[usuario, item] for usuario, item, _ in avaliacoes_tuplas])
@@ -548,8 +548,8 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
                 print(f"Cliente {cliente.id} :: Adicionando Avaliações")
                 # print("cliente.adicionar_novas_avaliacoes")
                 
-                cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
-                # cliente.adicionar_novas_avaliacoes(10, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
+                # cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
+                cliente.adicionar_novas_avaliacoes(20, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
                 #print("servidor.adicionar_avaliacoes_cliente")
                 servidor.adicionar_avaliacoes_cliente(copy.deepcopy(cliente.avaliacoes_locais))
 
@@ -611,16 +611,16 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
 dataset='X.xlsx'
 G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 
-rounds=3
-epochs=3 
-learning_rate=0.01
-embedding_dim = 16
-
-# # Melhores Hiperparâmetros
-# rounds=5 
-# epochs=10 
-# learning_rate=0.000174
+# rounds=3
+# epochs=3 
+# learning_rate=0.01
 # embedding_dim = 16
+
+# Melhores Hiperparâmetros
+rounds=5 
+epochs=10 
+learning_rate=0.000174
+embedding_dim = 16
 
 # dataset='X-u5-i10_semindices.xlsx'
 # G = {1: list(range(0, 2)), 2: list(range(2, 5))}
@@ -636,8 +636,8 @@ iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, 
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss')
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv')
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv2')
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma_fair')
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='nao_federado')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma_fair')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='nao_federado')
 
 
 
