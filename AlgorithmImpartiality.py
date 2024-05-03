@@ -96,6 +96,13 @@ class AlgorithmImpartiality():
     def get_X_est4(self, X_est):
         list_dif_mean = self.get_differences_means(X_est)
         list_dif_var = self.get_differences_vars(X_est) / 4.0
+
+        print("\nAlgorithmImpartiality :: get_X_est4")
+        print("(self.get_differences_means(X_est)).tolist()")
+        print((self.get_differences_means(X_est)).tolist())
+        print("(self.get_differences_vars(X_est)).tolist()")
+        print((self.get_differences_vars(X_est)).tolist())
+
         # Convertendo para arrays NumPy para operação vetorizada
         list_dif_mean = list_dif_mean.to_numpy()
         list_dif_var = list_dif_var.to_numpy()
