@@ -611,16 +611,16 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
 dataset='X.xlsx'
 G = {1: list(range(0, 15)), 2: list(range(15, 300))}
 
-rounds=3
-epochs=3 
-learning_rate=0.01
-embedding_dim = 16
-
-# # Melhores Hiperparâmetros
-# rounds=5 
-# epochs=10 
-# learning_rate=0.000174
+# rounds=3
+# epochs=3 
+# learning_rate=0.01
 # embedding_dim = 16
+
+# Melhores Hiperparâmetros
+rounds=5 
+epochs=10 
+learning_rate=0.000174
+embedding_dim = 16
 
 # dataset='X-u5-i10_semindices.xlsx'
 # G = {1: list(range(0, 2)), 2: list(range(2, 5))}
@@ -632,10 +632,10 @@ embedding_dim = 16
 
 
 print(f"\nFedFairRecSys")
-# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma')
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss')
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv')
-iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv2')
+iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv')
+# iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='mp_loss_indv2')
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='ma_fair')
 # iniciar_FedFairRecSys(dataset, G, rounds, epochs, learning_rate, embedding_dim, metodo_agregacao='nao_federado')
 
