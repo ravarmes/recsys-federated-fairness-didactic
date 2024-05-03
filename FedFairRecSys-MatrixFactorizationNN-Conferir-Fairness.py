@@ -112,27 +112,38 @@ class ClienteFedRecSys:
         # Armazenar a perda do modelo após o treinamento
         self.modelo_loss = history.history['loss'][-1] 
 
-        # Criar um array para armazenar os inputs
         user_inputs = np.array([[usuario, item_id] for usuario, item_id, _ in self.avaliacoes_locais])
-        print("user_inputs")
-        print(user_inputs)
 
-        # Obter as previsões para todos os inputs de uma vez
         predictions = self.modelo.predict(user_inputs)
-        print("predictions")
-        print(predictions)
+
+        if self.id == 0:
+        # Criar um array para armazenar os inputs
+            print("user_inputs")
+            print(user_inputs)
+        
+            print("\npredictions :: self.modelo.predict(user_inputs)")
+            print(predictions)
+
+            predictions_all = self.modelo.predict_all()
+            print("\npredictions_all :: self.modelo.predict_all()")
+            print(predictions_all)
+        
+            avaliacoes = converter_tuplas_para_dataframe(self.avaliacoes_locais, self.modelo.num_users, self.modelo.num_items)
+            print("\navaliacoes")
+            print(avaliacoes)
+
 
         # Calcular a perda individual para o usuário específico
         loss_usuario_especifico = 0
         mean_usuario_especifico = 0
-        print(f"Cliente :: {self.id}")
+        # print(f"Cliente :: {self.id}")
         for i, (userId, itemId, rating) in enumerate(self.avaliacoes_locais):
-            print(f"i : {i} :: ({userId}, {itemId}, {rating})")
+            # print(f"i : {i} :: ({userId}, {itemId}, {rating})")
             prediction = predictions[i]
-            print(f"loss_usuario_especifico += (rating - prediction) ** 2")
-            print(f"loss_usuario_especifico += ({rating} - {prediction}) ** 2")
-            loss_usuario_especifico += (rating - prediction) ** 2
-            mean_usuario_especifico += (rating - prediction)
+            # print(f"loss_usuario_especifico += (rating - prediction) ** 2")
+            # print(f"loss_usuario_especifico += ({rating} - {prediction}) ** 2")
+            loss_usuario_especifico += (prediction - rating) ** 2
+            mean_usuario_especifico += (prediction - rating)
 
         # Calcular o número total de avaliações do usuário específico
         num_avaliacoes_usuario_especifico = len(self.avaliacoes_locais)
@@ -371,16 +382,35 @@ class ServidorFedRecSys:
         print("FedFairRecSys :: aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global")
         print("\nself.modelos_locais_mean_indv")
         print(self.modelos_locais_mean_indv)
-        print("self.modelos_locais_loss_indv")
+        print("\nself.modelos_locais_loss_indv")
         print(self.modelos_locais_loss_indv)
 
         ilv = IndividualLossVariance(avaliacoes, omega, 1)
         losses = ilv.get_losses(recomendacoes)
-        print("\nilv = IndividualLossVariance(avaliacoes, omega, 1)")
-        print("losses = ilv.get_losses(recomendacoes)")
-        print(losses)
+        # print("\nilv = IndividualLossVariance(avaliacoes, omega, 1)")
+        # print("losses = ilv.get_losses(recomendacoes)")
+        # print(losses)
 
         algorithmImpartiality = AlgorithmImpartiality(avaliacoes, omega, 1)
+
+        modelos_locais_mean_indv_fair = algorithmImpartiality.get_differences_means(recomendacoes)
+        modelos_locais_loss_indv_fair = algorithmImpartiality.get_differences_vars(recomendacoes)
+        print("\nmodelos_locais_mean_indv_fair")
+        print(modelos_locais_mean_indv_fair)
+        print("\nmodelos_locais_loss_indv_fair")
+        print(modelos_locais_loss_indv_fair)
+
+        # Criando um DataFrame para armazenar os dados
+        df = pd.DataFrame({
+            'Modelos Locais Mean Indv': self.modelos_locais_mean_indv,
+            'Modelos Locais Loss Indv': self.modelos_locais_loss_indv,
+            'Modelos Locais Mean Indv Fair': modelos_locais_mean_indv_fair,
+            'Modelos Locais Loss Indv Fair': modelos_locais_loss_indv_fair
+        })
+
+        # Salvando o DataFrame em um arquivo Excel
+        df.to_excel('_xls/perdas.xlsx', index=False)
+
         list_X_est = algorithmImpartiality.evaluate(recomendacoes, 5) # calculates a list of h estimated matrices => h = 5
 
         avaliacoes.to_excel(f"_xls/{dataset}-avaliacoes.xlsx", index=False)
@@ -643,21 +673,10 @@ G_AGE = {1: [14, 132, 194, 262, 273], 2: [8, 23, 26, 33, 48, 50, 61, 64, 70, 71,
 
 G = G_ACTIVITY
 
-# dataset='X.xlsx'
+dataset='X.xlsx'
 
-# rounds=3
-# epochs=3 
-# learning_rate=0.01
-# embedding_dim = 16
-
-# Melhores Hiperparâmetros
-# rounds=1 
-# epochs=1 
-# learning_rate=0.1
-# embedding_dim = 16
-
-dataset='X-u5-i10_semindices.xlsx'
-G = {1: list(range(0, 2)), 2: list(range(2, 5))}
+# dataset='X-u5-i10_semindices.xlsx'
+# G = {1: list(range(0, 2)), 2: list(range(2, 5))}
 
 rounds= 1
 epochs= 1

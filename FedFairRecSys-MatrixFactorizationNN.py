@@ -123,8 +123,8 @@ class ClienteFedRecSys:
         mean_usuario_especifico = 0
         for i, (_, _, rating) in enumerate(self.avaliacoes_locais):
             prediction = predictions[i]
-            loss_usuario_especifico += (rating - prediction) ** 2
-            mean_usuario_especifico += (rating - prediction)
+            loss_usuario_especifico += (prediction - rating) ** 2
+            mean_usuario_especifico += (prediction - rating)
 
         # Calcular o número total de avaliações do usuário específico
         num_avaliacoes_usuario_especifico = len(self.avaliacoes_locais)
