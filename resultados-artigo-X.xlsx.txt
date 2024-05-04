@@ -1,0 +1,20 @@
+Agrupamento de UsuÃ¡rios por Atividade
+
+Round 1 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+Mï¿½todo de Agregaï¿½ï¿½o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.186492768
+Group Loss Variance (Rgrp) : 0.001875318
+RMSE : 1.209443562
+
+
+Round 1 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+Método de Agregação ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.186552201
+Group Loss Variance (Rgrp) : 0.001895782
+RMSE : 1.209334435
+
+

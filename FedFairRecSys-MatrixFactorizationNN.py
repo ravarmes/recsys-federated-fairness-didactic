@@ -522,8 +522,8 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
                 print(f"Cliente {cliente.id} :: Adicionando Avaliações e Treinando")
                 # print("cliente.adicionar_novas_avaliacoes")
                 
-                cliente.adicionar_novas_avaliacoes(quantidade=1, aleatorio=False)
-                # cliente.adicionar_novas_avaliacoes(20, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
+                # cliente.adicionar_novas_avaliacoes(quantidade=1, aleatorio=False)
+                cliente.adicionar_novas_avaliacoes(10, True) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, True)
 
                 # print("cliente.treinar_modelo")
                 cliente.treinar_modelo(epochs, batch_size=32, verbose=1)
@@ -558,7 +558,7 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
                 # print("cliente.adicionar_novas_avaliacoes")
                 
                 # cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
-                cliente.adicionar_novas_avaliacoes(20, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
+                cliente.adicionar_novas_avaliacoes(10, True) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, True)
                 #print("servidor.adicionar_avaliacoes_cliente")
                 servidor.adicionar_avaliacoes_cliente(copy.deepcopy(cliente.avaliacoes_locais))
 
@@ -597,7 +597,7 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
 
 
     # Defina o nome do arquivo onde deseja salvar as saídas
-    output_file = f"resultados-{dataset}.txt"
+    output_file = f"resultados-artigo-{dataset}.txt"
 
     # Redirecione a saída dos prints para um arquivo txt
     with open(output_file, "a") as file:
@@ -631,7 +631,7 @@ G = G_ACTIVITY
 dataset='X.xlsx'
 
 # Melhores Hiperparâmetros
-rounds=5 
+rounds=1 
 epochs=10 
 learning_rate=0.000174
 embedding_dim = 16
