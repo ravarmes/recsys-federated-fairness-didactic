@@ -151,6 +151,9 @@ class ClienteFedRecSys:
 
         # print("\ntreinar_modelo :: self.modelo_mean_indv")
         # print(self.modelo_mean_indv)
+    
+    def receber_modelo_global(self, modelo_global):
+        self.modelo = modelo_global
 
 
 
@@ -371,6 +374,9 @@ class ServidorFedRecSys:
         Z = AlgorithmImpartiality.losses_to_Z(list_losses)
         list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
         recomendacoes_fairness = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) 
+
+        print("recomendacoes_fairness")
+        print(recomendacoes_fairness)
         
         # Preparando o dataframe recomendacoes_fairness para dados no formato de tupla e treinar o modelo global
 
@@ -383,13 +389,15 @@ class ServidorFedRecSys:
         # self.avaliacoes = avaliacoes_tuplas
         
         # Preparar os dados X_train e y_train
-        self.X_train = np.array([[usuario, item] for usuario, item, _ in avaliacoes_tuplas])
-        self.y_train = np.array([rating for _, _, rating in avaliacoes_tuplas])
+        X_train = np.array([[usuario, item] for usuario, item, _ in avaliacoes_tuplas])
+        y_train = np.array([rating for _, _, rating in avaliacoes_tuplas])
         
         self.modelo_global = MatrixFactorizationNN(self.numero_de_usuarios, self.numero_de_itens, embedding_dim)
         
         optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         self.modelo_global.compile(optimizer=optimizer, loss='mean_squared_error')
+        self.modelo_global.fit(X_train, y_train, epochs=epochs, batch_size=32, verbose=1)
+        # Estou treinanod sem alterar X_train e y_train no servidor
 
     
 
@@ -510,11 +518,12 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
         if metodo_agregacao != "nao_federado":
         
             for cliente in clientes:
+                cliente.receber_modelo_global(servidor.modelo_global)
                 print(f"Cliente {cliente.id} :: Adicionando Avaliações e Treinando")
                 # print("cliente.adicionar_novas_avaliacoes")
                 
-                # cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
-                cliente.adicionar_novas_avaliacoes(20, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
+                cliente.adicionar_novas_avaliacoes(quantidade=1, aleatorio=False)
+                # cliente.adicionar_novas_avaliacoes(20, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
 
                 # print("cliente.treinar_modelo")
                 cliente.treinar_modelo(epochs, batch_size=32, verbose=1)
@@ -541,7 +550,7 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
             elif metodo_agregacao == 'ma_fair':
                 servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos()
                 servidor.aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(G)
-                servidor.treinar_modelo(epochs)
+                # servidor.treinar_modelo(epochs)
 
         elif metodo_agregacao == 'nao_federado':
             for cliente in clientes:
@@ -621,16 +630,16 @@ G = G_ACTIVITY
 
 dataset='X.xlsx'
 
-# rounds=3
-# epochs=3 
-# learning_rate=0.01
-# embedding_dim = 16
-
 # Melhores Hiperparâmetros
 rounds=5 
 epochs=10 
 learning_rate=0.000174
 embedding_dim = 16
+
+# rounds=3
+# epochs=3 
+# learning_rate=0.01
+# embedding_dim = 16
 
 # dataset='X-u5-i10_semindices.xlsx'
 # G = {1: list(range(0, 2)), 2: list(range(2, 5))}

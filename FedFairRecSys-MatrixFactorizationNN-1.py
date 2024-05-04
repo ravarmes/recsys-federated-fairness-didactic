@@ -112,36 +112,17 @@ class ClienteFedRecSys:
         # Armazenar a perda do modelo após o treinamento
         self.modelo_loss = history.history['loss'][-1] 
 
+        # Criar um array para armazenar os inputs
         user_inputs = np.array([[usuario, item_id] for usuario, item_id, _ in self.avaliacoes_locais])
 
+        # Obter as previsões para todos os inputs de uma vez
         predictions = self.modelo.predict(user_inputs)
-
-        if self.id == 0:
-        # Criar um array para armazenar os inputs
-            print("user_inputs")
-            print(user_inputs)
-        
-            print("\npredictions :: self.modelo.predict(user_inputs)")
-            print(predictions)
-
-            predictions_all = self.modelo.predict_all()
-            print("\npredictions_all :: self.modelo.predict_all()")
-            print(predictions_all)
-        
-            avaliacoes = converter_tuplas_para_dataframe(self.avaliacoes_locais, self.modelo.num_users, self.modelo.num_items)
-            print("\navaliacoes")
-            print(avaliacoes)
-
 
         # Calcular a perda individual para o usuário específico
         loss_usuario_especifico = 0
         mean_usuario_especifico = 0
-        # print(f"Cliente :: {self.id}")
-        for i, (userId, itemId, rating) in enumerate(self.avaliacoes_locais):
-            # print(f"i : {i} :: ({userId}, {itemId}, {rating})")
+        for i, (_, _, rating) in enumerate(self.avaliacoes_locais):
             prediction = predictions[i]
-            # print(f"loss_usuario_especifico += (rating - prediction) ** 2")
-            # print(f"loss_usuario_especifico += ({rating} - {prediction}) ** 2")
             loss_usuario_especifico += (prediction - rating) ** 2
             mean_usuario_especifico += (prediction - rating)
 
@@ -171,8 +152,6 @@ class ClienteFedRecSys:
         # print("\ntreinar_modelo :: self.modelo_mean_indv")
         # print(self.modelo_mean_indv)
 
-    def receber_modelo_global(self, modelo_global):
-        self.modelo = modelo_global
 
 
 class ServidorFedRecSys:
@@ -377,48 +356,13 @@ class ServidorFedRecSys:
 
     # Este método está considerando apenas as recomendações (ou seja, os modelos locais enviados pelos clientes)
     def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(self, G):
-        avaliacoes = converter_tuplas_para_dataframe(self.avaliacoes, self.numero_de_usuarios, self.numero_de_itens)
         recomendacoes = self.modelo_global.predict_all()
-        omega = ~avaliacoes.isnull() 
+        omega = ~recomendacoes.isnull() 
 
-        print("FedFairRecSys :: aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global")
-        print("\nself.modelos_locais_mean_indv")
-        print(self.modelos_locais_mean_indv)
-        print("\nself.modelos_locais_loss_indv")
-        print(self.modelos_locais_loss_indv)
+        algorithmImpartiality = AlgorithmImpartiality(recomendacoes, omega, 1)
+        list_X_est = algorithmImpartiality.evaluate_federated(recomendacoes, self.modelos_locais_mean_indv, self.modelos_locais_loss_indv, 10) # calculates a list of h estimated matrices => h = 5
 
-        ilv = IndividualLossVariance(avaliacoes, omega, 1)
-        losses = ilv.get_losses(recomendacoes)
-        # print("\nilv = IndividualLossVariance(avaliacoes, omega, 1)")
-        # print("losses = ilv.get_losses(recomendacoes)")
-        # print(losses)
-
-        algorithmImpartiality = AlgorithmImpartiality(avaliacoes, omega, 1)
-
-        modelos_locais_mean_indv_fair = algorithmImpartiality.get_differences_means(recomendacoes)
-        modelos_locais_loss_indv_fair = algorithmImpartiality.get_differences_vars(recomendacoes)
-        print("\nmodelos_locais_mean_indv_fair")
-        print(modelos_locais_mean_indv_fair)
-        print("\nmodelos_locais_loss_indv_fair")
-        print(modelos_locais_loss_indv_fair)
-
-        # Criando um DataFrame para armazenar os dados
-        df = pd.DataFrame({
-            'Modelos Locais Mean Indv': self.modelos_locais_mean_indv,
-            'Modelos Locais Loss Indv': self.modelos_locais_loss_indv,
-            'Modelos Locais Mean Indv Fair': modelos_locais_mean_indv_fair,
-            'Modelos Locais Loss Indv Fair': modelos_locais_loss_indv_fair
-        })
-
-        # Salvando o DataFrame em um arquivo Excel
-        df.to_excel('_xls/perdas.xlsx', index=False)
-
-        list_X_est = algorithmImpartiality.evaluate(recomendacoes, 5) # calculates a list of h estimated matrices => h = 5
-
-        avaliacoes.to_excel(f"_xls/{dataset}-avaliacoes.xlsx", index=False)
-        recomendacoes.to_excel(f"_xls/{dataset}-recomendacoes.xlsx", index=False)
-
-
+        ilv = IndividualLossVariance(recomendacoes, omega, 1)
         list_losses = []
         for X_est in list_X_est:
             losses = ilv.get_losses(X_est)
@@ -439,17 +383,77 @@ class ServidorFedRecSys:
         # self.avaliacoes = avaliacoes_tuplas
         
         # Preparar os dados X_train e y_train
-        X_train = np.array([[usuario, item] for usuario, item, _ in avaliacoes_tuplas])
-        y_train = np.array([rating for _, _, rating in avaliacoes_tuplas])
+        self.X_train = np.array([[usuario, item] for usuario, item, _ in avaliacoes_tuplas])
+        self.y_train = np.array([rating for _, _, rating in avaliacoes_tuplas])
         
         self.modelo_global = MatrixFactorizationNN(self.numero_de_usuarios, self.numero_de_itens, embedding_dim)
         
         optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         self.modelo_global.compile(optimizer=optimizer, loss='mean_squared_error')
-        self.modelo_global.fit(X_train, y_train, epochs=epochs, batch_size=32, verbose=1)
+        self.modelo_global.fit(self.X_train, self.y_train, epochs=epochs, batch_size=32, verbose=1)
         # Estou treinanod sem alterar X_train e y_train no servidor
 
     
+
+    # Este método está considerando apenas as avaliações e as recomendações (ou seja, os modelos locais enviados pelos clientes + avaliações)
+    # As avaliações não estarão disponíveis em um sistema federado. Mas, aqui fiz apenas para teste
+    def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global2(self, G):
+        avaliacoes = converter_tuplas_para_dataframe(self.avaliacoes, self.numero_de_usuarios, self.numero_de_itens)
+        recomendacoes = self.modelo_global.predict_all()
+        omega = ~avaliacoes.isnull() 
+
+        # # --------------------------------
+        # print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: avaliacoes")
+        # print(avaliacoes)
+        # print(type(avaliacoes))
+
+        # print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: recomendacoes")
+        # print(recomendacoes)
+        # print(type(recomendacoes))
+
+        # # # Encontrar os valores não numéricos
+        # # # Aplicar a função em todo o DataFrame para obter uma máscara booleana
+        # # mask = recomendacoes.applymap(is_numeric)
+        # # # Encontrar células não numéricas usando a máscara
+        # # non_numeric_values = recomendacoes[~mask]
+        # # print("Valores não numéricos:")
+        # # print(non_numeric_values)
+
+        # # # Converter todo o DataFrame para float, com coerção de erros
+        # # recomendacoes = recomendacoes.apply(pd.to_numeric, errors='coerce')
+        # # # Substituir NaN por um valor padrão (0) em todo o DataFrame
+        # # recomendacoes.fillna(0, inplace=True)
+
+        # # print("Verificando valores não numéricos")
+        # # for column in recomendacoes.columns:
+        # #     is_numeric = pd.to_numeric(recomendacoes[column], errors='coerce').notna()
+        # #     if not is_numeric.all():
+        # #         print(f"Valores não numéricos encontrados na coluna {column}:")
+        # #         print(recomendacoes[column][~is_numeric])
+
+        # recomendacoes = recomendacoes.apply(pd.to_numeric, errors='coerce')
+        # recomendacoes.fillna(0, inplace=True)
+        # recomendacoes.to_excel(f"teste.xlsx", index=False)
+
+
+        # # -------------------------------------------
+
+        ilv = IndividualLossVariance(avaliacoes, omega, 1)
+        algorithmImpartiality = AlgorithmImpartiality(avaliacoes, omega, 1)
+        list_X_est = algorithmImpartiality.evaluate(recomendacoes, 10) # calculates a list of h estimated matrices => h = 5
+
+        list_losses = []
+        for X_est in list_X_est:
+            losses = ilv.get_losses(X_est)
+            list_losses.append(losses)
+
+        Z = AlgorithmImpartiality.losses_to_Z(list_losses)
+        list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
+        recomendacoes_fairness = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) 
+
+        return recomendacoes_fairness
+    
+
 def converter_tuplas_para_dataframe(tuplas, numero_de_usuarios, numero_de_itens):
     df = pd.DataFrame(columns=range(numero_de_itens), index=range(numero_de_usuarios))
     for tupla in tuplas:
@@ -508,11 +512,10 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
         if metodo_agregacao != "nao_federado":
         
             for cliente in clientes:
-                cliente.receber_modelo_global(servidor.modelo_global)
                 print(f"Cliente {cliente.id} :: Adicionando Avaliações e Treinando")
                 # print("cliente.adicionar_novas_avaliacoes")
                 
-                cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
+                cliente.adicionar_novas_avaliacoes(quantidade=1, aleatorio=False)
                 # cliente.adicionar_novas_avaliacoes(20, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
 
                 # print("cliente.treinar_modelo")
@@ -547,8 +550,8 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
                 print(f"Cliente {cliente.id} :: Adicionando Avaliações")
                 # print("cliente.adicionar_novas_avaliacoes")
                 
-                # cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
-                cliente.adicionar_novas_avaliacoes(20, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
+                cliente.adicionar_novas_avaliacoes(quantidade=1, aleatorio=False)
+                # cliente.adicionar_novas_avaliacoes(20, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
                 #print("servidor.adicionar_avaliacoes_cliente")
                 servidor.adicionar_avaliacoes_cliente(copy.deepcopy(cliente.avaliacoes_locais))
 
@@ -586,7 +589,7 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
     print(f'RMSE : {result_rmse:.9f}')
 
 
-    # # Defina o nome do arquivo onde deseja salvar as saídas
+    # Defina o nome do arquivo onde deseja salvar as saídas
     # output_file = f"resultados-{dataset}.txt"
 
     # # Redirecione a saída dos prints para um arquivo txt
@@ -602,28 +605,15 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
     #     print(f'\n', file=file)
 
 
-    # avaliacoes_df.to_excel(f"_xls/{dataset}-avaliacoes_df-{metodo_agregacao}.xlsx", index=False)
-    # recomendacoes_df.to_excel(f"_xls/{dataset}-recomendacoes_df-{metodo_agregacao}.xlsx", index=False)
+    avaliacoes_df.to_excel(f"_xls/{dataset}-avaliacoes_df-{metodo_agregacao}.xlsx", index=False)
+    recomendacoes_df.to_excel(f"_xls/{dataset}-recomendacoes_df-{metodo_agregacao}.xlsx", index=False)
 
 
-
-# Agrupamento por Atividade
-G_ACTIVITY = {1: list(range(0, 15)), 2: list(range(15, 300))}
-
-# Agrupamento por Gênero
-G_GENDER = {1: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 26, 27, 28, 29, 30, 32, 33, 36, 37, 38, 39, 40, 41, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 64, 65, 66, 67, 68, 69, 70, 71, 72, 74, 75, 76, 77, 78, 79, 80, 82, 83, 84, 85, 86, 87, 88, 89, 90, 93, 94, 95, 96, 99, 100, 102, 103, 105, 107, 108, 109, 110, 111, 112, 115, 117, 118, 120, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 146, 147, 148, 149, 151, 152, 153, 154, 156, 159, 160, 161, 162, 164, 165, 166, 168, 169, 170, 172, 174, 175, 176, 177, 178, 181, 182, 183, 184, 186, 187, 188, 189, 191, 194, 196, 198, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 218, 219, 220, 222, 223, 224, 226, 227, 229, 230, 231, 232, 233, 234, 237, 238, 239, 240, 245, 246, 247, 248, 249, 250, 251, 252, 255, 256, 257, 258, 259, 260, 261, 262, 263, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 291, 292, 293, 294, 295, 296, 297, 298, 299], 2: [14, 25, 31, 34, 35, 42, 63, 73, 81, 91, 92, 97, 98, 101, 104, 106, 113, 114, 116, 119, 121, 122, 133, 144, 145, 150, 155, 157, 158, 163, 167, 171, 173, 179, 180, 185, 190, 192, 193, 195, 197, 199, 213, 214, 215, 216, 217, 221, 225, 228, 235, 236, 241, 242, 243, 244, 253, 254, 264, 290]}
-
-# Agrupamento por Idade
-G_AGE = {1: [14, 132, 194, 262, 273], 2: [8, 23, 26, 33, 48, 50, 61, 64, 70, 71, 76, 82, 86, 90, 92, 94, 96, 101, 107, 124, 126, 129, 134, 140, 149, 157, 158, 159, 163, 168, 171, 174, 175, 189, 191, 201, 207, 209, 215, 216, 222, 231, 237, 244, 246, 251, 255, 265, 270, 275, 282, 288, 290], 3: [3, 6, 7, 9, 10, 11, 15, 16, 21, 22, 24, 28, 29, 31, 32, 34, 35, 37, 39, 40, 41, 42, 43, 44, 45, 51, 53, 55, 56, 59, 60, 63, 65, 66, 69, 72, 73, 74, 75, 79, 80, 81, 85, 89, 93, 97, 102, 103, 104, 106, 108, 109, 110, 111, 116, 118, 119, 120, 122, 128, 130, 131, 133, 135, 136, 138, 139, 141, 142, 143, 145, 147, 151, 155, 161, 164, 169, 170, 173, 176, 179, 181, 183, 186, 187, 188, 190, 192, 193, 195, 196, 198, 200, 202, 203, 204, 205, 206, 211, 212, 213, 217, 219, 220, 223, 225, 226, 229, 230, 232, 233, 234, 236, 238, 240, 241, 249, 252, 253, 254, 258, 260, 261, 264, 267, 268, 269, 276, 277, 279, 280, 283, 285, 286, 287, 289, 291, 293, 294, 295, 296, 298], 4: [1, 2, 4, 5, 13, 17, 18, 25, 27, 36, 38, 49, 52, 57, 68, 77, 78, 84, 87, 88, 91, 95, 98, 99, 100, 105, 112, 117, 121, 127, 144, 146, 150, 152, 153, 156, 166, 172, 177, 182, 199, 208, 210, 214, 227, 228, 243, 245, 248, 250, 256, 263, 271, 272, 278, 292, 297, 299], 5: [19, 20, 30, 46, 47, 54, 58, 62, 67, 83, 113, 125, 137, 148, 160, 165, 167, 184, 197, 221, 235, 239, 242, 281], 6: [0, 114, 115, 123, 178, 180, 185, 224, 247, 257, 266, 274], 7: [12, 154, 162, 218, 259, 284]}
-
-G = G_ACTIVITY
-
-dataset='X.xlsx'
 
 dataset='X-u5-i10_semindices.xlsx'
 G = {1: list(range(0, 2)), 2: list(range(2, 5))}
 
-rounds= 1
+rounds= 2
 epochs= 1
 learning_rate=0.1
 embedding_dim = 16

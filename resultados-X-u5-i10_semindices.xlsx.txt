@@ -69,3 +69,93 @@ Individual Loss Variance (Rindv) : 0.236078710
 Group Loss Variance (Rgrp) : 0.149148355
 RMSE : 1.098525606
 
+Round 1 - Epochs 1 -  Learning Rate 0.1
+Dataset X-u5-i10_semindices.xlsx 
+Método de Agregação ma_fair 
+Polarization (Rpol) : 0.459695882
+Individual Loss Variance (Rindv) : 0.208296688
+Group Loss Variance (Rgrp) : 0.004877655
+RMSE : 1.284234754
+
+
+Round 2 - Epochs 1 -  Learning Rate 0.1
+Dataset X-u5-i10_semindices.xlsx 
+Método de Agregação ma_fair 
+Polarization (Rpol) : 0.541923628
+Individual Loss Variance (Rindv) : 0.557212911
+Group Loss Variance (Rgrp) : 0.006721258
+RMSE : 1.368861497
+
+
+Round 2 - Epochs 1 -  Learning Rate 0.1
+Dataset X-u5-i10_semindices.xlsx 
+Método de Agregação ma_fair 
+Polarization (Rpol) : 0.538969204
+Individual Loss Variance (Rindv) : 0.763825396
+Group Loss Variance (Rgrp) : 0.566229170
+RMSE : 1.433451726
+
+
+Round 2 - Epochs 1 -  Learning Rate 0.1
+Dataset X-u5-i10_semindices.xlsx 
+Método de Agregação ma_fair 
+Polarization (Rpol) : 0.678635212
+Individual Loss Variance (Rindv) : 0.709935498
+Group Loss Variance (Rgrp) : 0.491807385
+RMSE : 1.278447353
+
+
+Round 2 - Epochs 1 -  Learning Rate 0.1
+Dataset X-u5-i10_semindices.xlsx 
+Método de Agregação ma_fair 
+Polarization (Rpol) : 0.706164355
+Individual Loss Variance (Rindv) : 0.342598458
+Group Loss Variance (Rgrp) : 0.159844948
+RMSE : 1.428618079
+
+
+Round 2 - Epochs 1 -  Learning Rate 0.1
+Dataset X-u5-i10_semindices.xlsx 
+Método de Agregação ma_fair 
+Polarization (Rpol) : 0.755168487
+Individual Loss Variance (Rindv) : 0.901893449
+Group Loss Variance (Rgrp) : 0.766832987
+RMSE : 1.429887568
+
+
+Round 2 - Epochs 1 -  Learning Rate 0.1
+Dataset X-u5-i10_semindices.xlsx 
+Método de Agregação ma_fair 
+Polarization (Rpol) : 0.696726761
+Individual Loss Variance (Rindv) : 0.424787329
+Group Loss Variance (Rgrp) : 0.009466722
+RMSE : 1.101123088
+
+
+Round 2 - Epochs 1 -  Learning Rate 0.1
+Dataset X-u5-i10_semindices.xlsx 
+Método de Agregação ma_fair 
+Polarization (Rpol) : 0.494765992
+Individual Loss Variance (Rindv) : 0.584329254
+Group Loss Variance (Rgrp) : 0.270917838
+RMSE : 1.391248408
+
+
+Round 2 - Epochs 1 -  Learning Rate 0.1
+Dataset X-u5-i10_semindices.xlsx 
+Método de Agregação ma_fair 
+Polarization (Rpol) : 0.423989130
+Individual Loss Variance (Rindv) : 0.095078529
+Group Loss Variance (Rgrp) : 0.039503560
+RMSE : 1.282770020
+
+
+Round 1 - Epochs 1 -  Learning Rate 0.1
+Dataset X-u5-i10_semindices.xlsx 
+Método de Agregação ma_fair 
+Polarization (Rpol) : 0.925492541
+Individual Loss Variance (Rindv) : 0.474522689
+Group Loss Variance (Rgrp) : 0.026281741
+RMSE : 1.288321640
+
+

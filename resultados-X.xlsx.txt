@@ -69,3 +69,60 @@ RMSE : 1.218241542
 Agrupamento de Usuários por Atividade (Activity)
 
 
+Round 5 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+M�todo de Agrega��o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.178799771
+Group Loss Variance (Rgrp) : 0.003385416
+RMSE : 1.218241542
+
+
+Round 5 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+M�todo de Agrega��o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.178799772
+Group Loss Variance (Rgrp) : 0.003385416
+RMSE : 1.218241542
+
+
+Round 1 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+M�todo de Agrega��o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.186186028
+Group Loss Variance (Rgrp) : 0.002068151
+RMSE : 1.210468377
+
+
+Round 1 - Epochs 1 -  Learning Rate 0.1
+Dataset X.xlsx 
+M�todo de Agrega��o ma_fair 
+Polarization (Rpol) : 0.000225149
+Individual Loss Variance (Rindv) : 0.187442979
+Group Loss Variance (Rgrp) : 0.001640882
+RMSE : 1.210631583
+
+
+Round 1 - Epochs 1 -  Learning Rate 0.1
+Dataset X.xlsx 
+M�todo de Agrega��o ma_fair 
+Polarization (Rpol) : 0.000577316
+Individual Loss Variance (Rindv) : 0.187603670
+Group Loss Variance (Rgrp) : 0.001671267
+RMSE : 1.210709515
+
+-----------------------------------
+Agrupamento de Usuários por Atividade (Activity)
+Depois de setar o modelo global nos clientes a cada Round
+
+Round 5 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+M�todo de Agrega��o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.184584998
+Group Loss Variance (Rgrp) : 0.001376930
+RMSE : 1.218516829
+
+
