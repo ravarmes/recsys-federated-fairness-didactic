@@ -11,10 +11,89 @@ RMSE : 1.209443562
 
 Round 1 - Epochs 10 -  Learning Rate 0.000174
 Dataset X.xlsx 
-Método de Agregação ma_fair 
+Mï¿½todo de Agregaï¿½ï¿½o ma_fair 
 Polarization (Rpol) : 0.000000000
 Individual Loss Variance (Rindv) : 0.186552201
 Group Loss Variance (Rgrp) : 0.001895782
 RMSE : 1.209334435
 
+
+Round 1 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+Mï¿½todo de Agregaï¿½ï¿½o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.186624600
+Group Loss Variance (Rgrp) : 0.001927222
+RMSE : 1.209486144
+
+--------------------------------------------------------
+
+Round 3 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+Mï¿½todo de Agregaï¿½ï¿½o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.183568482
+Group Loss Variance (Rgrp) : 0.002164757
+RMSE : 1.211431938
+
+
+Round 3 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+Mï¿½todo de Agregaï¿½ï¿½o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.183318877
+Group Loss Variance (Rgrp) : 0.002437025
+RMSE : 1.211516182
+
+
+Round 3 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+Mï¿½todo de Agregaï¿½ï¿½o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.183036398
+Group Loss Variance (Rgrp) : 0.002370141
+RMSE : 1.211655700
+
+--------------------------------------------------------
+
+Round 5 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+Mï¿½todo de Agregaï¿½ï¿½o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.178688007
+Group Loss Variance (Rgrp) : 0.002393628
+RMSE : 1.213766364
+
+
+Round 5 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+Mï¿½todo de Agregaï¿½ï¿½o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.180423509
+Group Loss Variance (Rgrp) : 0.002560624
+RMSE : 1.213703872
+
+--------------------------------------------------------------
+
+*embedding_dim = 64*
+Round 1 - Epochs 20 -  Learning Rate 0.0001
+Dataset X.xlsx 
+Mï¿½todo de Agregaï¿½ï¿½o ma_fair 
+Polarization (Rpol) : 0.007938162
+Individual Loss Variance (Rindv) : 0.100297735
+Group Loss Variance (Rgrp) : 0.000750020
+RMSE : 1.062870995
+
+
+*embedding_dim = 64*
+Round 1 - Epochs 20 -  Learning Rate 0.0001
+Dataset X.xlsx 
+Mï¿½todo de Agregaï¿½ï¿½o ma_fair 
+Polarization (Rpol) : 0.007983428
+Individual Loss Variance (Rindv) : 0.099960425
+Group Loss Variance (Rgrp) : 0.000899133
+RMSE : 1.062666647
+
+
+*embedding_dim = 64*
 

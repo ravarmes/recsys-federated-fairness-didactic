@@ -563,7 +563,8 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
                 servidor.adicionar_avaliacoes_cliente(copy.deepcopy(cliente.avaliacoes_locais))
 
             # print("servidor.treinar_modelo")
-            servidor.treinar_modelo(epochs) # Considerando as novas avaliações dos clientes locais
+            if round == rounds - 1:
+                servidor.treinar_modelo(epochs) # Considerando as novas avaliações dos clientes locais
 
     avaliacoes_df = converter_tuplas_para_dataframe(servidor.avaliacoes, servidor.numero_de_usuarios, servidor.numero_de_itens)
     recomendacoes_df = servidor.modelo_global.predict_all()
@@ -631,10 +632,15 @@ G = G_ACTIVITY
 dataset='X.xlsx'
 
 # Melhores Hiperparâmetros
-rounds=1 
-epochs=10 
-learning_rate=0.000174
-embedding_dim = 16
+# rounds=5 
+# epochs=10 
+# learning_rate=0.000174
+# embedding_dim = 16
+
+rounds=5 
+epochs=20 
+learning_rate=0.0001
+embedding_dim = 64
 
 # rounds=3
 # epochs=3 
