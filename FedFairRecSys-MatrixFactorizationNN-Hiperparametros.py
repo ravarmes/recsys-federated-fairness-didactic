@@ -97,3 +97,26 @@ for idx, hp in enumerate(best_hyperparameters):
 #   embedding_dim: 96
 #   learning_rate: 0.00015132308411926136
 #   epochs: 40
+
+# ---------------------------------------
+
+# Conjunto 1:
+#   embedding_dim: 16
+#   learning_rate: 0.00013165193962468244
+#   epochs: 35
+# Conjunto 2:
+#   embedding_dim: 16
+#   learning_rate: 0.00012917374266665043
+#   epochs: 45
+# Conjunto 3:
+#   embedding_dim: 32
+#   learning_rate: 0.00021692895740550613
+#   epochs: 50
+# Conjunto 4:
+#   embedding_dim: 48
+#   learning_rate: 0.0001837223287108159
+#   epochs: 20
+# Conjunto 5:
+#   embedding_dim: 96
+#   learning_rate: 0.0001305098638736452
+#   epochs: 25
