@@ -16,7 +16,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from AlgorithmUserFairness import RMSE, Polarization, IndividualLossVariance, GroupLossVariance
-#from AlgorithmImpartiality import AlgorithmImpartiality
+# from AlgorithmImpartiality import AlgorithmImpartiality
 
 class MatrixFactorizationNN(tf.keras.Model):
     def __init__(self, num_users, num_items, embedding_dim):
@@ -123,8 +123,8 @@ class ClienteFedRecSys:
         mean_usuario_especifico = 0
         for i, (_, _, rating) in enumerate(self.avaliacoes_locais):
             prediction = predictions[i]
-            loss_usuario_especifico += (rating - prediction) ** 2
-            mean_usuario_especifico += (rating - prediction)
+            loss_usuario_especifico += (prediction - rating) ** 2
+            mean_usuario_especifico += (prediction - rating)
 
         # Calcular o número total de avaliações do usuário específico
         num_avaliacoes_usuario_especifico = len(self.avaliacoes_locais)
@@ -151,6 +151,9 @@ class ClienteFedRecSys:
 
         # print("\ntreinar_modelo :: self.modelo_mean_indv")
         # print(self.modelo_mean_indv)
+    
+    def receber_modelo_global(self, modelo_global):
+        self.modelo = modelo_global
 
 
 
@@ -357,12 +360,12 @@ class ServidorFedRecSys:
     # Este método está considerando apenas as recomendações (ou seja, os modelos locais enviados pelos clientes)
     def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(self, G):
         recomendacoes = self.modelo_global.predict_all()
-        # omega = ~recomendacoes.isnull() 
+        omega = ~recomendacoes.isnull() 
 
-        # ilv = IndividualLossVariance(recomendacoes, omega, 1)
         # algorithmImpartiality = AlgorithmImpartiality(recomendacoes, omega, 1)
         # list_X_est = algorithmImpartiality.evaluate_federated(recomendacoes, self.modelos_locais_mean_indv, self.modelos_locais_loss_indv, 10) # calculates a list of h estimated matrices => h = 5
 
+        # ilv = IndividualLossVariance(recomendacoes, omega, 1)
         # list_losses = []
         # for X_est in list_X_est:
         #     losses = ilv.get_losses(X_est)
@@ -371,6 +374,9 @@ class ServidorFedRecSys:
         # Z = AlgorithmImpartiality.losses_to_Z(list_losses)
         # list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
         # recomendacoes_fairness = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) 
+
+        # print("recomendacoes_fairness")
+        # print(recomendacoes_fairness)
         
         # # Preparando o dataframe recomendacoes_fairness para dados no formato de tupla e treinar o modelo global
 
@@ -380,76 +386,22 @@ class ServidorFedRecSys:
         # self.numero_de_usuarios = recomendacoes_fairness.shape[0]
         # self.numero_de_itens = recomendacoes_fairness.shape[1]
         # avaliacoes_tuplas = list(zip(X, y, ratings))
-        # self.avaliacoes = avaliacoes_tuplas
+        # # self.avaliacoes = avaliacoes_tuplas
         
         # # Preparar os dados X_train e y_train
-        # self.X_train = np.array([[usuario, item] for usuario, item, _ in avaliacoes_tuplas])
-        # self.y_train = np.array([rating for _, _, rating in avaliacoes_tuplas])
+        # X_train = np.array([[usuario, item] for usuario, item, _ in avaliacoes_tuplas])
+        # y_train = np.array([rating for _, _, rating in avaliacoes_tuplas])
         
         # self.modelo_global = MatrixFactorizationNN(self.numero_de_usuarios, self.numero_de_itens, embedding_dim)
         
         # optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         # self.modelo_global.compile(optimizer=optimizer, loss='mean_squared_error')
+        # self.modelo_global.fit(X_train, y_train, epochs=epochs, batch_size=32, verbose=1)
+        # # Estou treinanod sem alterar X_train e y_train no servidor
 
     
 
-    # Este método está considerando apenas as avaliações e as recomendações (ou seja, os modelos locais enviados pelos clientes + avaliações)
-    # As avaliações não estarão disponíveis em um sistema federado. Mas, aqui fiz apenas para teste
-    def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global2(self, G):
-        avaliacoes = converter_tuplas_para_dataframe(self.avaliacoes, self.numero_de_usuarios, self.numero_de_itens)
-        recomendacoes = self.modelo_global.predict_all()
-        omega = ~avaliacoes.isnull() 
-
-        # # # --------------------------------
-        # # print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: avaliacoes")
-        # # print(avaliacoes)
-        # # print(type(avaliacoes))
-
-        # # print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: recomendacoes")
-        # # print(recomendacoes)
-        # # print(type(recomendacoes))
-
-        # # # # Encontrar os valores não numéricos
-        # # # # Aplicar a função em todo o DataFrame para obter uma máscara booleana
-        # # # mask = recomendacoes.applymap(is_numeric)
-        # # # # Encontrar células não numéricas usando a máscara
-        # # # non_numeric_values = recomendacoes[~mask]
-        # # # print("Valores não numéricos:")
-        # # # print(non_numeric_values)
-
-        # # # # Converter todo o DataFrame para float, com coerção de erros
-        # # # recomendacoes = recomendacoes.apply(pd.to_numeric, errors='coerce')
-        # # # # Substituir NaN por um valor padrão (0) em todo o DataFrame
-        # # # recomendacoes.fillna(0, inplace=True)
-
-        # # # print("Verificando valores não numéricos")
-        # # # for column in recomendacoes.columns:
-        # # #     is_numeric = pd.to_numeric(recomendacoes[column], errors='coerce').notna()
-        # # #     if not is_numeric.all():
-        # # #         print(f"Valores não numéricos encontrados na coluna {column}:")
-        # # #         print(recomendacoes[column][~is_numeric])
-
-        # # recomendacoes = recomendacoes.apply(pd.to_numeric, errors='coerce')
-        # # recomendacoes.fillna(0, inplace=True)
-        # # recomendacoes.to_excel(f"teste.xlsx", index=False)
-
-
-        # # # -------------------------------------------
-
-        # ilv = IndividualLossVariance(avaliacoes, omega, 1)
-        # algorithmImpartiality = AlgorithmImpartiality(avaliacoes, omega, 1)
-        # list_X_est = algorithmImpartiality.evaluate(recomendacoes, 10) # calculates a list of h estimated matrices => h = 5
-
-        # list_losses = []
-        # for X_est in list_X_est:
-        #     losses = ilv.get_losses(X_est)
-        #     list_losses.append(losses)
-
-        # Z = AlgorithmImpartiality.losses_to_Z(list_losses)
-        # list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
-        # recomendacoes_fairness = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) 
-
-        # return recomendacoes_fairness
+    
     
 
 def converter_tuplas_para_dataframe(tuplas, numero_de_usuarios, numero_de_itens):
@@ -510,11 +462,12 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
         if metodo_agregacao != "nao_federado":
         
             for cliente in clientes:
+                cliente.receber_modelo_global(servidor.modelo_global)
                 print(f"Cliente {cliente.id} :: Adicionando Avaliações e Treinando")
                 # print("cliente.adicionar_novas_avaliacoes")
                 
-                # cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
-                cliente.adicionar_novas_avaliacoes(20, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
+                # cliente.adicionar_novas_avaliacoes(quantidade=1, aleatorio=False)
+                cliente.adicionar_novas_avaliacoes(10, True) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, True)
 
                 # print("cliente.treinar_modelo")
                 cliente.treinar_modelo(epochs, batch_size=32, verbose=1)
@@ -541,20 +494,21 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
             elif metodo_agregacao == 'ma_fair':
                 servidor.agregar_modelos_locais_ao_global_media_aritmetica_pesos()
                 servidor.aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(G)
-                servidor.treinar_modelo(epochs)
+                # servidor.treinar_modelo(epochs)
 
         elif metodo_agregacao == 'nao_federado':
             for cliente in clientes:
                 print(f"Cliente {cliente.id} :: Adicionando Avaliações")
                 # print("cliente.adicionar_novas_avaliacoes")
                 
-                #cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
-                cliente.adicionar_novas_avaliacoes(20, False) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, False)
+                # cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
+                cliente.adicionar_novas_avaliacoes(10, True) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(2, True)
                 #print("servidor.adicionar_avaliacoes_cliente")
                 servidor.adicionar_avaliacoes_cliente(copy.deepcopy(cliente.avaliacoes_locais))
 
-            # print("servidor.treinar_modelo")
-            servidor.treinar_modelo(epochs) # Considerando as novas avaliações dos clientes locais
+            if round == rounds - 1:
+                # print("servidor.treinar_modelo")
+                servidor.treinar_modelo(epochs) # Considerando as novas avaliações dos clientes locais
 
     avaliacoes_df = converter_tuplas_para_dataframe(servidor.avaliacoes, servidor.numero_de_usuarios, servidor.numero_de_itens)
     recomendacoes_df = servidor.modelo_global.predict_all()
@@ -588,7 +542,7 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
 
 
     # Defina o nome do arquivo onde deseja salvar as saídas
-    output_file = f"resultados-{dataset}-ifes.txt"
+    output_file = f"resultados-artigo-{dataset}-ifes.txt"
 
     # Redirecione a saída dos prints para um arquivo txt
     with open(output_file, "a") as file:
@@ -617,20 +571,24 @@ G_GENDER = {1: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19
 # Agrupamento por Idade
 G_AGE = {1: [14, 132, 194, 262, 273], 2: [8, 23, 26, 33, 48, 50, 61, 64, 70, 71, 76, 82, 86, 90, 92, 94, 96, 101, 107, 124, 126, 129, 134, 140, 149, 157, 158, 159, 163, 168, 171, 174, 175, 189, 191, 201, 207, 209, 215, 216, 222, 231, 237, 244, 246, 251, 255, 265, 270, 275, 282, 288, 290], 3: [3, 6, 7, 9, 10, 11, 15, 16, 21, 22, 24, 28, 29, 31, 32, 34, 35, 37, 39, 40, 41, 42, 43, 44, 45, 51, 53, 55, 56, 59, 60, 63, 65, 66, 69, 72, 73, 74, 75, 79, 80, 81, 85, 89, 93, 97, 102, 103, 104, 106, 108, 109, 110, 111, 116, 118, 119, 120, 122, 128, 130, 131, 133, 135, 136, 138, 139, 141, 142, 143, 145, 147, 151, 155, 161, 164, 169, 170, 173, 176, 179, 181, 183, 186, 187, 188, 190, 192, 193, 195, 196, 198, 200, 202, 203, 204, 205, 206, 211, 212, 213, 217, 219, 220, 223, 225, 226, 229, 230, 232, 233, 234, 236, 238, 240, 241, 249, 252, 253, 254, 258, 260, 261, 264, 267, 268, 269, 276, 277, 279, 280, 283, 285, 286, 287, 289, 291, 293, 294, 295, 296, 298], 4: [1, 2, 4, 5, 13, 17, 18, 25, 27, 36, 38, 49, 52, 57, 68, 77, 78, 84, 87, 88, 91, 95, 98, 99, 100, 105, 112, 117, 121, 127, 144, 146, 150, 152, 153, 156, 166, 172, 177, 182, 199, 208, 210, 214, 227, 228, 243, 245, 248, 250, 256, 263, 271, 272, 278, 292, 297, 299], 5: [19, 20, 30, 46, 47, 54, 58, 62, 67, 83, 113, 125, 137, 148, 160, 165, 167, 184, 197, 221, 235, 239, 242, 281], 6: [0, 114, 115, 123, 178, 180, 185, 224, 247, 257, 266, 274], 7: [12, 154, 162, 218, 259, 284]}
 
-G = G_GENDER
+G = G_ACTIVITY
 
 dataset='X.xlsx'
+
+# Melhores Hiperparâmetros
+# rounds=5 
+# epochs=10 
+# learning_rate=0.000174
+# embedding_dim = 16
+rounds=5 
+epochs=20 
+learning_rate=0.0001
+embedding_dim = 64
 
 # rounds=3
 # epochs=3 
 # learning_rate=0.01
 # embedding_dim = 16
-
-# Melhores Hiperparâmetros
-rounds=5 
-epochs=10 
-learning_rate=0.000174
-embedding_dim = 16
 
 # dataset='X-u5-i10_semindices.xlsx'
 # G = {1: list(range(0, 2)), 2: list(range(2, 5))}
