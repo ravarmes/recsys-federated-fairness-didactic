@@ -235,31 +235,6 @@ class ServidorFedRecSys:
         self.modelo_global.set_weights(novos_pesos)
 
 
-    # def agregar_modelos_locais_ao_global_media_poderada_pesos_loss(self):
-    #     total_perdas = sum(self.modelos_locais_loss)
-    #     pesos = [perda / total_perdas for perda in self.modelos_locais_loss]
-    #     pesos_globais = self.modelo_global.get_weights()
-    #     pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
-    #     novos_pesos = []
-    #     for i, _ in enumerate(pesos_globais):
-    #         pesos_parametro = [pesos[i] for pesos in pesos_clientes]
-    #         media_parametro = np.mean(pesos_parametro, axis=0)
-    #         novos_pesos.append(media_parametro)
-    #     self.modelo_global.set_weights(novos_pesos)
-
-    
-    # def agregar_modelos_locais_ao_global_media_poderada_pesos_loss_indv(self):
-    #     total_perdas = sum(self.modelos_locais_loss_indv)
-    #     pesos = [perda / total_perdas for perda in self.modelos_locais_loss_indv]
-    #     pesos_globais = self.modelo_global.get_weights()
-    #     pesos_clientes = [cliente.get_weights() for cliente in self.modelos_locais]
-    #     novos_pesos = []
-    #     for i, _ in enumerate(pesos_globais):
-    #         pesos_parametro = [pesos[i] for pesos in pesos_clientes]
-    #         media_parametro = np.mean(pesos_parametro, axis=0)
-    #         novos_pesos.append(media_parametro)
-    #     self.modelo_global.set_weights(novos_pesos)
-
     def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss(self):
         total_perdas = sum(self.modelos_locais_loss)
         pesos_normalizados = np.array([1 / (perda / total_perdas) for perda in self.modelos_locais_loss])
@@ -287,44 +262,6 @@ class ServidorFedRecSys:
         ]
         self.modelo_global.set_weights(novos_pesos)
 
-
-    # def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv2(self):
-    #     # Passo 1: Calcular a média dos erros individuais
-    #     media_global = np.mean(self.modelos_locais_loss_indv)
-        
-    #     # Passo 2: Calcular as diferenças em relação à média
-    #     diferencas = np.array(self.modelos_locais_loss_indv) - media_global
-        
-    #     # Passo 3: Normalizar as diferenças para uma escala de 0 a 1
-    #     min_diferenca = np.min(diferencas)
-    #     max_diferenca = np.max(diferencas)
-        
-    #     if max_diferenca - min_diferenca == 0:  # Evitar divisão por zero
-    #         diferencas_normalizadas = np.zeros_like(diferencas)
-    #     else:
-    #         diferencas_normalizadas = (diferencas - min_diferenca) / (max_diferenca - min_diferenca)
-        
-    #     # Passo 4: Calcular pesos invertidos e normalizar
-    #     pesos_invertidos = 1 - diferencas_normalizadas
-    #     pesos_normalizados = pesos_invertidos / np.sum(pesos_invertidos)
-        
-    #     # Passo 5: Obter os pesos dos modelos locais e garantir consistência
-    #     pesos_modelos_locais = [np.array(modelo.get_weights()) for modelo in self.modelos_locais]
-        
-    #     # Identificar a forma do maior modelo local para inicializar 'pesos_agg'
-    #     max_shape = max([peso.shape for peso in pesos_modelos_locais], key=lambda x: np.prod(x))
-    #     pesos_agg = np.zeros(max_shape)  # Inicializar com zeros
-        
-    #     # Passo 6: Aplicar a média ponderada para calcular pesos do modelo global
-    #     for idx, peso in enumerate(pesos_modelos_locais):
-    #         # Verificar se as formas são compatíveis antes de somar
-    #         if pesos_agg.shape == peso.shape:
-    #             pesos_agg += pesos_normalizados[idx] * peso
-    #         else:
-    #             raise ValueError("Incompatibilidade de formas entre modelos locais.")
-        
-    #     # Definir os pesos do modelo global
-    #     self.modelo_global.set_weights(pesos_agg.tolist())  # Converter para lista antes de definir
 
     def agregar_modelos_locais_ao_global_media_ponderada_pesos_loss_indv2(self):
         # Passo 1: Calcular a média dos erros individuais
@@ -399,65 +336,6 @@ class ServidorFedRecSys:
         self.modelo_global.fit(X_train, y_train, epochs=epochs, batch_size=32, verbose=1)
         # Estou treinanod sem alterar X_train e y_train no servidor
 
-    
-
-    # Este método está considerando apenas as avaliações e as recomendações (ou seja, os modelos locais enviados pelos clientes + avaliações)
-    # As avaliações não estarão disponíveis em um sistema federado. Mas, aqui fiz apenas para teste
-    def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global2(self, G):
-        avaliacoes = converter_tuplas_para_dataframe(self.avaliacoes, self.numero_de_usuarios, self.numero_de_itens)
-        recomendacoes = self.modelo_global.predict_all()
-        omega = ~avaliacoes.isnull() 
-
-        # # --------------------------------
-        # print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: avaliacoes")
-        # print(avaliacoes)
-        # print(type(avaliacoes))
-
-        # print("\naplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global :: recomendacoes")
-        # print(recomendacoes)
-        # print(type(recomendacoes))
-
-        # # # Encontrar os valores não numéricos
-        # # # Aplicar a função em todo o DataFrame para obter uma máscara booleana
-        # # mask = recomendacoes.applymap(is_numeric)
-        # # # Encontrar células não numéricas usando a máscara
-        # # non_numeric_values = recomendacoes[~mask]
-        # # print("Valores não numéricos:")
-        # # print(non_numeric_values)
-
-        # # # Converter todo o DataFrame para float, com coerção de erros
-        # # recomendacoes = recomendacoes.apply(pd.to_numeric, errors='coerce')
-        # # # Substituir NaN por um valor padrão (0) em todo o DataFrame
-        # # recomendacoes.fillna(0, inplace=True)
-
-        # # print("Verificando valores não numéricos")
-        # # for column in recomendacoes.columns:
-        # #     is_numeric = pd.to_numeric(recomendacoes[column], errors='coerce').notna()
-        # #     if not is_numeric.all():
-        # #         print(f"Valores não numéricos encontrados na coluna {column}:")
-        # #         print(recomendacoes[column][~is_numeric])
-
-        # recomendacoes = recomendacoes.apply(pd.to_numeric, errors='coerce')
-        # recomendacoes.fillna(0, inplace=True)
-        # recomendacoes.to_excel(f"teste.xlsx", index=False)
-
-
-        # # -------------------------------------------
-
-        ilv = IndividualLossVariance(avaliacoes, omega, 1)
-        algorithmImpartiality = AlgorithmImpartiality(avaliacoes, omega, 1)
-        list_X_est = algorithmImpartiality.evaluate(recomendacoes, 10) # calculates a list of h estimated matrices => h = 5
-
-        list_losses = []
-        for X_est in list_X_est:
-            losses = ilv.get_losses(X_est)
-            list_losses.append(losses)
-
-        Z = AlgorithmImpartiality.losses_to_Z(list_losses)
-        list_Zs = AlgorithmImpartiality.matrices_Zs(Z, G)
-        recomendacoes_fairness = AlgorithmImpartiality.make_matrix_X_gurobi(list_X_est, G, list_Zs) 
-
-        return recomendacoes_fairness
     
 
 def converter_tuplas_para_dataframe(tuplas, numero_de_usuarios, numero_de_itens):

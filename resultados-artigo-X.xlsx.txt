@@ -97,3 +97,12 @@ RMSE : 1.062666647
 
 *embedding_dim = 64*
 
+Round 5 - Epochs 20 -  Learning Rate 0.0001
+Dataset X.xlsx 
+Método de Agregação ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.179596191
+Group Loss Variance (Rgrp) : 0.002840392
+RMSE : 1.213274158
+
+
