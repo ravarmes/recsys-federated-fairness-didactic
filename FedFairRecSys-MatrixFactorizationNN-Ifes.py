@@ -576,7 +576,7 @@ G = G_ACTIVITY
 dataset='X.xlsx'
 
 # Melhores Hiperparâmetros
-rounds=8 
+rounds=1 
 epochs=10 
 learning_rate=0.000174
 embedding_dim = 16
