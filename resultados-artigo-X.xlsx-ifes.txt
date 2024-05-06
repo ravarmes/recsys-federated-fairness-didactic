@@ -572,3 +572,11 @@ Group Loss Variance (Rgrp) : 0.001877228
 RMSE : 1.233985253
 
 
+------------------------------------------------------
+RESULTADOS COM AS SEGUINTES AVALIAÇÕES POR ROUNDS:
+FAVORECIDOS = 8
+DESFAVORECIDOS = 4
+
+
+
+

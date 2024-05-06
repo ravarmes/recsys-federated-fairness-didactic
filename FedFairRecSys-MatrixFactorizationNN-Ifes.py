@@ -467,7 +467,7 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
                 # print("cliente.adicionar_novas_avaliacoes")
                 
                 # cliente.adicionar_novas_avaliacoes(quantidade=1, aleatorio=False)
-                cliente.adicionar_novas_avaliacoes(15, True) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(8, True)
+                cliente.adicionar_novas_avaliacoes(8, True) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(4, True)
 
                 # print("cliente.treinar_modelo")
                 cliente.treinar_modelo(epochs, batch_size=32, verbose=1)
