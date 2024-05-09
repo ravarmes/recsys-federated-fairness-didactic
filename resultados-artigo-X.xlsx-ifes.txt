@@ -341,7 +341,8 @@ Individual Loss Variance (Rindv) : 0.098655313
 Group Loss Variance (Rgrp) : 0.000090058
 RMSE : 1.074926208
 
-------------------------------------------------------
+===================================================================
+===================================================================
 RESULTADOS COM AS SEGUINTES AVALIAÇÕES POR ROUNDS:
 FAVORECIDOS = 20
 DESFAVORECIDOS = 10

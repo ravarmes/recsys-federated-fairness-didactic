@@ -68,6 +68,8 @@ class ClienteFedRecSys:
         self.X_train = None
         self.y_train = None
 
+
+
         # optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         # self.modelo.compile(optimizer=optimizer, loss='mean_squared_error')
         
@@ -155,6 +157,7 @@ class ClienteFedRecSys:
     def receber_modelo_global(self, modelo_global):
         self.modelo = modelo_global
 
+   
 
 
 class ServidorFedRecSys:
@@ -294,6 +297,24 @@ class ServidorFedRecSys:
         self.modelo_global.set_weights(novos_pesos)
 
 
+    def agregar_modelos_locais_ao_global_gradientes(self, learning_rate=0.01):
+        # Passo 1: Inicializar acumulador para os gradientes
+        gradientes_globais = [np.zeros_like(peso) for peso in self.modelo_global.get_weights()]
+
+        # Passo 2: Coletar e acumular os gradientes de todos os clientes
+        for cliente in self.modelos_locais:
+            gradientes_cliente = cliente.calcular_gradientes()
+            gradientes_globais = [g_global + g_cliente for g_global, g_cliente in zip(gradientes_globais, gradientes_cliente)]
+        
+        # Passo 3: Calcular o gradiente médio
+        num_clientes = len(self.modelos_locais)
+        gradientes_medios = [g / num_clientes for g in gradientes_globais]
+
+        # Passo 4: Aplicar os gradientes médios ao modelo global
+        pesos_novos = [peso - learning_rate * gradiente for peso, gradiente in zip(self.modelo_global.get_weights(), gradientes_medios)]
+        self.modelo_global.set_weights(pesos_novos)
+
+
     # Este método está considerando apenas as recomendações (ou seja, os modelos locais enviados pelos clientes)
     def aplicar_algoritmo_imparcialidade_na_agregacao_ao_modelo_global(self, G):
         recomendacoes = self.modelo_global.predict_all()
@@ -401,7 +422,7 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
                 # print("cliente.adicionar_novas_avaliacoes")
                 
                 # cliente.adicionar_novas_avaliacoes(quantidade=1, aleatorio=False)
-                cliente.adicionar_novas_avaliacoes(15, True) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(8, True)
+                cliente.adicionar_novas_avaliacoes(8, True) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(4, True)
 
                 # print("cliente.treinar_modelo")
                 cliente.treinar_modelo(epochs, batch_size=32, verbose=1)
@@ -436,7 +457,7 @@ def iniciar_FedFairRecSys (dataset, G, rounds = 1, epochs=5, learning_rate=0.02,
                 # print("cliente.adicionar_novas_avaliacoes")
                 
                 # cliente.adicionar_novas_avaliacoes(quantidade=2, aleatorio=False)
-                cliente.adicionar_novas_avaliacoes(15, True) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(8, True)
+                cliente.adicionar_novas_avaliacoes(8, True) if cliente.id < 15 else cliente.adicionar_novas_avaliacoes(4, True)
                 #print("servidor.adicionar_avaliacoes_cliente")
                 servidor.adicionar_avaliacoes_cliente(copy.deepcopy(cliente.avaliacoes_locais))
 
@@ -510,7 +531,7 @@ G = G_ACTIVITY
 dataset='X.xlsx'
 
 # Melhores Hiperparâmetros
-rounds=8 
+rounds=3 
 epochs=10 
 learning_rate=0.000174
 embedding_dim = 16

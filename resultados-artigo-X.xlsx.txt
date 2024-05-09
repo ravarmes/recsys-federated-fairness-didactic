@@ -105,11 +105,30 @@ Individual Loss Variance (Rindv) : 0.179596191
 Group Loss Variance (Rgrp) : 0.002840392
 RMSE : 1.213274158
 
----------------------------------------------------
+======================================================================
+======================================================================
 
 embedding_dim = 16
 FAVORECIDOS = 20 AVALIAÇÕES POR ROUNDS
 DESFAVORECIDOS = 10 AVALIAÇÕES POR ROUNDS
+
+Round 1 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+M�todo de Agrega��o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.183509145
+Group Loss Variance (Rgrp) : 0.001719595
+RMSE : 1.212079802
+
+
+Round 1 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+M�todo de Agrega��o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.184511359
+Group Loss Variance (Rgrp) : 0.001769997
+RMSE : 1.210798944
+
 
 Round 3 - Epochs 10 -  Learning Rate 0.000174
 Dataset X.xlsx 
@@ -140,14 +159,38 @@ RMSE : 1.228700882
 FAVORECIDOS = 15 AVALIAÇÕES POR ROUNDS
 DESFAVORECIDOS = 8 AVALIAÇÕES POR ROUNDS
 
-
-
 Round 8 - Epochs 10 -  Learning Rate 0.000174
 Dataset X.xlsx 
-M�todo de Agrega��o ma_fair 
+M�todo de Agrega��o ma_fair 
 Polarization (Rpol) : 0.000000000
 Individual Loss Variance (Rindv) : 0.145984367
 Group Loss Variance (Rgrp) : 0.001669218
 RMSE : 1.233882004
+
+
+======================================================================
+======================================================================
+
+embedding_dim = 16
+FAVORECIDOS = 8 AVALIAÇÕES POR ROUNDS
+DESFAVORECIDOS = 4 AVALIAÇÕES POR ROUNDS
+
+
+Round 1 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+M�todo de Agrega��o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.184732975
+Group Loss Variance (Rgrp) : 0.001781952
+RMSE : 1.210379754
+
+
+Round 1 - Epochs 10 -  Learning Rate 0.000174
+Dataset X.xlsx 
+M�todo de Agrega��o ma_fair 
+Polarization (Rpol) : 0.000000000
+Individual Loss Variance (Rindv) : 0.185619422
+Group Loss Variance (Rgrp) : 0.001653175
+RMSE : 1.210249884
 
 
